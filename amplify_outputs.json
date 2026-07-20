@@ -37,6 +37,11 @@
         "Steward": {
           "precedence": 3
         }
+      },
+      {
+        "Medical": {
+          "precedence": 4
+        }
       }
     ],
     "mfa_configuration": "OPTIONAL",
@@ -59,6 +64,166 @@
     "model_introspection": {
       "version": 1,
       "models": {
+        "Risk": {
+          "name": "Risk",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "eventId": {
+              "name": "eventId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "event": {
+              "name": "event",
+              "isArray": false,
+              "type": {
+                "model": "Event"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "eventId"
+                ]
+              }
+            },
+            "ref": {
+              "name": "ref",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "hazard": {
+              "name": "hazard",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "likelihood": {
+              "name": "likelihood",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "consequence": {
+              "name": "consequence",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "score": {
+              "name": "score",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "controls": {
+              "name": "controls",
+              "isArray": true,
+              "type": {
+                "nonModel": "RiskControl"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "residualRating": {
+              "name": "residualRating",
+              "isArray": false,
+              "type": {
+                "enum": "ResidualRating"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "linkedIncidentIds": {
+              "name": "linkedIncidentIds",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "linkedCategories": {
+              "name": "linkedCategories",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "Risks",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete"
+                    ],
+                    "groups": [
+                      "Admin",
+                      "Controller"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
         "Event": {
           "name": "Event",
           "fields": {
@@ -110,6 +275,38 @@
               "isArray": true,
               "type": {
                 "model": "Incident"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "eventId"
+                ]
+              }
+            },
+            "risks": {
+              "name": "risks",
+              "isArray": true,
+              "type": {
+                "model": "Risk"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "eventId"
+                ]
+              }
+            },
+            "checklistInstances": {
+              "name": "checklistInstances",
+              "isArray": true,
+              "type": {
+                "model": "ChecklistInstance"
               },
               "isRequired": false,
               "attributes": [],
@@ -216,6 +413,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "assignedZone": {
+              "name": "assignedZone",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "createdAt": {
               "name": "createdAt",
               "isArray": false,
@@ -269,9 +473,92 @@
                     "ownerField": "cognitoSub",
                     "allow": "owner",
                     "operations": [
-                      "read"
+                      "read",
+                      "create",
+                      "update"
                     ],
                     "identityClaim": "cognito:username"
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "PushSubscription": {
+          "name": "PushSubscription",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "endpoint": {
+              "name": "endpoint",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "p256dh": {
+              "name": "p256dh",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "auth": {
+              "name": "auth",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "PushSubscriptions",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
                   }
                 ]
               }
@@ -448,6 +735,14 @@
               "attributes": [],
               "isArrayNullable": true
             },
+            "linkedRiskIds": {
+              "name": "linkedRiskIds",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
             "locked": {
               "name": "locked",
               "isArray": false,
@@ -481,6 +776,243 @@
           },
           "syncable": true,
           "pluralName": "Incidents",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "read",
+                      "update"
+                    ],
+                    "groups": [
+                      "Admin",
+                      "Controller",
+                      "Loggist",
+                      "Steward",
+                      "Medical"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "ChecklistTemplate": {
+          "name": "ChecklistTemplate",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "recurring": {
+              "name": "recurring",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "items": {
+              "name": "items",
+              "isArray": true,
+              "type": {
+                "nonModel": "ChecklistTemplateItem"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": false
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "ChecklistTemplates",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete"
+                    ],
+                    "groups": [
+                      "Admin",
+                      "Controller"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "ChecklistInstance": {
+          "name": "ChecklistInstance",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "eventId": {
+              "name": "eventId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "event": {
+              "name": "event",
+              "isArray": false,
+              "type": {
+                "model": "Event"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "eventId"
+                ]
+              }
+            },
+            "templateId": {
+              "name": "templateId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "title": {
+              "name": "title",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "date": {
+              "name": "date",
+              "isArray": false,
+              "type": "AWSDate",
+              "isRequired": true,
+              "attributes": []
+            },
+            "assignee": {
+              "name": "assignee",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "dueAt": {
+              "name": "dueAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "sourceIncidentId": {
+              "name": "sourceIncidentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "items": {
+              "name": "items",
+              "isArray": true,
+              "type": {
+                "nonModel": "ChecklistInstanceItem"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": false
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "ChecklistInstances",
           "attributes": [
             {
               "type": "model",
@@ -581,9 +1113,44 @@
             "Level3",
             "Level4"
           ]
+        },
+        "ResidualRating": {
+          "name": "ResidualRating",
+          "values": [
+            "Low",
+            "Medium",
+            "High",
+            "Critical"
+          ]
+        },
+        "ChecklistItemStatus": {
+          "name": "ChecklistItemStatus",
+          "values": [
+            "Pending",
+            "Done"
+          ]
         }
       },
       "nonModels": {
+        "RiskControl": {
+          "name": "RiskControl",
+          "fields": {
+            "label": {
+              "name": "label",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "checked": {
+              "name": "checked",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
         "IncidentUpdate": {
           "name": "IncidentUpdate",
           "fields": {
@@ -617,11 +1184,107 @@
             }
           }
         },
+        "ChecklistTemplateItem": {
+          "name": "ChecklistTemplateItem",
+          "fields": {
+            "label": {
+              "name": "label",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "requiresPhoto": {
+              "name": "requiresPhoto",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "requiresSignoff": {
+              "name": "requiresSignoff",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "ChecklistInstanceItem": {
+          "name": "ChecklistInstanceItem",
+          "fields": {
+            "label": {
+              "name": "label",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "requiresPhoto": {
+              "name": "requiresPhoto",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "requiresSignoff": {
+              "name": "requiresSignoff",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": {
+                "enum": "ChecklistItemStatus"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "completedBy": {
+              "name": "completedBy",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "completedAt": {
+              "name": "completedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "photoS3Key": {
+              "name": "photoS3Key",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "notes": {
+              "name": "notes",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "TriageAssistReturnType": {
           "name": "TriageAssistReturnType",
           "fields": {
             "suggestedCategory": {
               "name": "suggestedCategory",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedSubcategory": {
+              "name": "suggestedSubcategory",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -636,6 +1299,42 @@
             },
             "suggestedLevel": {
               "name": "suggestedLevel",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedPriority": {
+              "name": "suggestedPriority",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedRadioChannel": {
+              "name": "suggestedRadioChannel",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedAssignedAgency": {
+              "name": "suggestedAssignedAgency",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedRiskRefs": {
+              "name": "suggestedRiskRefs",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "narrativeSummary": {
+              "name": "narrativeSummary",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -665,6 +1364,12 @@
               "isArray": false,
               "type": "String",
               "isRequired": true
+            },
+            "riskContext": {
+              "name": "riskContext",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
             }
           }
         },
@@ -682,8 +1387,77 @@
             }
           }
         }
+      },
+      "mutations": {
+        "sendEscalationPush": {
+          "name": "sendEscalationPush",
+          "isArray": false,
+          "type": "Int",
+          "isRequired": false,
+          "arguments": {
+            "incidentId": {
+              "name": "incidentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "level": {
+              "name": "level",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "category": {
+              "name": "category",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "zone": {
+              "name": "zone",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "narrative": {
+              "name": "narrative",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
       }
     }
+  },
+  "storage": {
+    "aws_region": "eu-west-2",
+    "bucket_name": "amplify-d1wx5jes1tad5t-ma-tideimsstoragebucket52d2-waq6hr6fmbdq",
+    "buckets": [
+      {
+        "name": "tideImsStorage",
+        "bucket_name": "amplify-d1wx5jes1tad5t-ma-tideimsstoragebucket52d2-waq6hr6fmbdq",
+        "aws_region": "eu-west-2",
+        "paths": {
+          "checklist-photos/*": {
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          },
+          "incident-photos/*": {
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          }
+        }
+      }
+    ]
   },
   "version": "1.4"
 }

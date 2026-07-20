@@ -20,13 +20,19 @@ Running `npm run dev` locally connects to that same live backend unless you
 run your own `npx ampx sandbox`.
 
 **Known gaps on the live deployment:**
-- `GROQ_API_KEY` is a placeholder (`REPLACE_ME_SET_REAL_GROQ_KEY`) set just
-  so the backend would deploy — AI triage-assist/shift-summary will error
-  until the real key is set via AWS Console → Amplify → TideIMS → Secret
-  management, or `aws ssm put-parameter --name /amplify/shared/d1wx5jes1tad5t/GROQ_API_KEY --type SecureString --value <key> --overwrite`.
 - No custom domain — `tideeventsgroup.co.uk` has no Route 53 hosted zone in
   this account yet.
 - MFA is optional, not enforced, on the deployed user pool.
+- `GROQ_API_KEY` and `VAPID_PRIVATE_KEY` are both set as real secrets
+  (`aws ssm put-parameter --name /amplify/shared/d1wx5jes1tad5t/<name> --type SecureString --value <value> --overwrite` —
+  Amplify Gen2's `secret()` helper doesn't support setting a deployed-branch
+  secret any other way outside the Console). Rotate either via AWS Console →
+  Amplify → TideIMS → Secret management, or the same command with
+  `--overwrite`.
+- The Risk register and default checklist templates need seeding once per
+  event — sign in as Controller/Admin and use the "Seed R01–R14" button on
+  `/risk-register` and "Seed default templates" on `/checklists`. Nothing
+  seeds automatically on deploy.
 
 **Redeploying after further changes** (no GitHub auto-deploy is wired up):
 ```bash
@@ -48,11 +54,46 @@ Lambdas are all implemented and now running against the live backend above.
 ## What's implemented
 
 - **Auth** — Cognito user pool via `@aws-amplify/ui-react`'s `Authenticator`,
-  four groups (`Admin`, `Controller`, `Loggist`, `Steward`), role surfaced
-  through `AuthContext`.
+  five groups (`Admin`, `Controller`, `Loggist`, `Steward`, `Medical` — the
+  last is a discipline-scoped viewer role, see role-scoped views below),
+  role surfaced through `AuthContext`.
 - **Data model** — `amplify/data/resource.ts`: `Event`, `UserProfile`,
   `Incident` (append-only `updates[]`, field-level authorization so only
-  Controller/Admin can set `escalationLevel` or `locked`).
+  Controller/Admin can set `escalationLevel` or `locked`), `Risk`,
+  `ChecklistTemplate`, `ChecklistInstance`, `PushSubscription`.
+- **Risk register** (`/risk-register`, Controller/Admin) — a
+  Controller/Admin-managed hazard register seeded from Tide's OSSP hazard
+  register (R01–R14, `src/utils/seedRiskRegister.ts` — review ratings/
+  controls against the real document before relying on them live), with a
+  per-hazard checklist of controls (not free text), an incidents-per-ref
+  chart, and incident-to-risk linking. New Incident auto-suggests risk refs
+  matching the selected category; the AI triage assistant can also suggest
+  refs from the narrative (see below). CSV/PDF exports carry a risk-ref
+  column.
+- **Jobs & Checklists** (`/checklists`) — `ChecklistTemplate` +
+  `ChecklistInstance`, with a scheduled Lambda
+  (`amplify/functions/checklist-generator`, runs daily) auto-creating
+  today's instance for every recurring template on every currently-active
+  event. Default templates seeded from OSSP §18–19 (structural/electrical/
+  fire/gas sign-off). Items support inline camera capture (uploaded to S3
+  under `checklist-photos/`) and required sign-off. Any Incident can be
+  converted to an ad-hoc job via "Convert to job" on Incident Detail —
+  creates a `ChecklistInstance` with a `sourceIncidentId` back-reference.
+- **Role-scoped Live Board views (client-side only)** — Steward sees only
+  incidents in their self-assigned zone (`MyZoneSelector.tsx`, self-service
+  since there's no admin user-management UI — see gaps below) plus
+  whole-site incidents; Medical sees only `category: Medical` incidents;
+  Controller/Admin/Loggist see everything. This is a UX scope, not a
+  security boundary — AppSync authorization doesn't yet enforce row-level
+  visibility, so it needs a custom resolver to be a real guarantee.
+- **Web Push escalation alerts** — declaring Level 3/4 on an incident fans
+  out a push notification to every subscribed device
+  (`amplify/functions/send-escalation-push`, triggered by a custom
+  mutation from `IncidentDetail.tsx`, not a DynamoDB stream). Devices opt
+  in via the bell icon in the header (`PushSubscribeToggle.tsx`); the
+  service worker (`src/sw.ts`, `vite-plugin-pwa` in `injectManifest` mode)
+  handles the `push`/`notificationclick` events and deep-links to the
+  incident.
 - **Live board** — `AppSync` subscriptions (`onCreate`/`onUpdate`), sorted
   by escalation level, Level 4 banner across all devices.
 - **Incident logging** — full Section 9 category/subcategory taxonomy,
@@ -67,16 +108,25 @@ Lambdas are all implemented and now running against the live backend above.
   Incident Detail), the full incident log (from the Live Board), and the
   shift handover/debrief report (from Reports — includes the AI summary if
   already generated, plus a "Reviewed by / Date" sign-off line).
-- **PWA** — manifest, Workbox-generated service worker (`vite-plugin-pwa`),
-  and a `localStorage`-backed offline write queue (`src/offline/queue.ts`)
-  that queues incident creation while offline and flushes on reconnect.
+- **PWA** — manifest, a hand-written service worker (`src/sw.ts`,
+  `vite-plugin-pwa` in `injectManifest` mode — needed for the push/
+  notificationclick handlers above), and a `localStorage`-backed offline
+  write queue (`src/offline/queue.ts`) that queues incident creation while
+  offline and flushes on reconnect. Layout is responsive down to phone
+  widths — the header nav collapses to icon-only, the Live Board's radio/
+  wind side panel moves below the incident list, and multi-field form rows
+  wrap/stack instead of overflowing.
 - **AI, server-side only** (Build Plan Section 11) — two Lambdas, both
   called via custom AppSync queries so the Groq key never reaches the
   browser:
-  - `triage-assist` — a "Suggest with AI" button on the New Incident form
-    (`TriageSuggest.tsx`) proposes category/zone/level from the narrative.
-    It's a suggestion card the Loggist applies or dismisses; nothing is
-    ever auto-filled or auto-submitted.
+  - `triage-assist` — "Fill form with AI" on the New Incident form
+    (`TriageSuggest.tsx`) drafts category, subcategory, zone, priority,
+    radio channel, assigned agency, linked risk refs, and a cleaned-up
+    narrative from a rough free-text description (including matching
+    against the active event's own risk register, passed as context). It's
+    a draft card the Loggist reviews and applies in one step, or dismisses
+    — nothing is ever auto-filled or auto-submitted, and it never touches
+    escalation level.
   - `shift-summary` — a "Generate" button on Reports (`AiSummaryPanel.tsx`)
     drafts a plain-English handover paragraph from the structured incident
     counts. Labeled as a draft to review, not a decision — matches the
@@ -119,13 +169,33 @@ Lambdas are all implemented and now running against the live backend above.
   but locking every *other* field (status, `updates[]`) once `locked` is
   true needs a custom AppSync resolver — see the comment in
   `amplify/data/resource.ts`.
-- **Photo attachments (S3), push notifications, and the site-map view**
-  (Phase 4) are not built yet — `attachmentKeys` exists on the model as a
-  landing point.
+- **The site-map view** (Phase 4) is not built yet. Photo attachments (S3)
+  and push notifications now are — see Risk register/Jobs & Checklists/Web
+  Push above.
 - **User management (Cognito group assignment) has no UI** — adding
-  someone to `Admin`/`Controller`/`Loggist`/`Steward` is still a Cognito
-  console/CLI task; it needs an admin-privileged Lambda (`AdminAddUserToGroup`)
-  to expose safely through AppSync, which isn't built yet.
+  someone to `Admin`/`Controller`/`Loggist`/`Steward`/`Medical` is still a
+  Cognito console/CLI task; it needs an admin-privileged Lambda
+  (`AdminAddUserToGroup`) to expose safely through AppSync, which isn't
+  built yet. Steward zone assignment is the one exception — it's
+  self-service (`MyZoneSelector.tsx`) since it's just a `UserProfile` field
+  a Steward owns, not a group membership change.
+- **`checklist-generator` and `send-escalation-push` read/write DynamoDB
+  directly** (`@aws-sdk/lib-dynamodb`, granted via
+  `backend.data.resources.tables` + `grantReadWriteData` in `backend.ts`)
+  rather than going through the AppSync/GraphQL client — the
+  `getAmplifyDataClientConfig` + `$amplify/env` pattern that Amplify's own
+  docs show for this doesn't currently bundle under `ampx pipeline-deploy`
+  with this toolchain version (fails with `Could not resolve
+  "$amplify/env/<fn>"` at esbuild time, despite working fine under `ampx
+  sandbox`). Both functions are server-only with no caller identity, so a
+  direct table grant is a reasonable substitute, not just a workaround —
+  but it does mean these two bypass the schema's field/model-level
+  authorization rules entirely (acceptable here: neither writes anything a
+  client couldn't already write through the API with the right role).
+- **SMS incident intake and multi-event/Hub portfolio rollup** are
+  explicitly out of scope for now — deferred until there's a concrete
+  need (SMS needs a Twilio/AWS End User Messaging integration decision;
+  Hub rollup only matters once Tide runs concurrent events).
 - **No automated tests.**
 - **jsPDF adds real weight to the main bundle** (~140KB gzip) since it's
   statically imported by three pages rather than route-split — acceptable
