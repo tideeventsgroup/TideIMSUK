@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
 import { AlarmListener } from './components/AlarmListener';
+import { SOSButton } from './components/SOSButton';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
 import { RoleGate } from './components/RoleGate';
@@ -98,6 +99,9 @@ export default function App() {
               {user?.name} <span className="mono">· {user && roleLabel(user.role)}</span>
             </span>
             <ThemeToggle />
+            <RoleGate allow={['event-control', 'fmic', 'staff']}>
+              <SOSButton />
+            </RoleGate>
           </div>
         </div>
         <nav
