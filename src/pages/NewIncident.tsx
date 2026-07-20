@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, AlertCircle, ShieldAlert, Camera, X, Loader2 } from 'lucide-react';
+import { MapPin, AlertCircle, ShieldAlert, Camera, X, Loader2, RotateCcw } from 'lucide-react';
 import { uploadData } from 'aws-amplify/storage';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
@@ -16,15 +16,42 @@ import { enqueueIncident } from '../offline/queue';
 import { TriageSuggest, type AppliedFields } from '../components/TriageSuggest';
 import { pushNotify } from '../utils/pushNotify';
 
+const LAST_INCIDENT_KEY = 'tide-ims-last-incident';
+
+interface LastIncident {
+  category: CategoryKey;
+  zone: ZoneKey;
+}
+
+function readLastIncident(): LastIncident | null {
+  try {
+    const raw = localStorage.getItem(LAST_INCIDENT_KEY);
+    return raw ? (JSON.parse(raw) as LastIncident) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastIncident(entry: LastIncident) {
+  try {
+    localStorage.setItem(LAST_INCIDENT_KEY, JSON.stringify(entry));
+  } catch {
+    // best effort — not critical if this doesn't persist
+  }
+}
+
 export function NewIncident() {
   const { user } = useAuth();
   const { activeEvent } = useEvent();
   const navigate = useNavigate();
   const { position, status: geoStatus, capture } = useGeolocation();
+  const lastIncident = useRef(readLastIncident()).current;
 
   const [category, setCategory] = useState<CategoryKey>('Other');
   const [subcategory, setSubcategory] = useState('');
-  const [zone, setZone] = useState<ZoneKey>('WholeSite');
+  // Falls back to wherever the last incident was logged rather than a fixed
+  // default — most incidents cluster near the last one (Section: GPS fallback).
+  const [zone, setZone] = useState<ZoneKey>(lastIncident?.zone ?? 'WholeSite');
   const [priority, setPriority] = useState<Priority>('Standard');
   const [narrative, setNarrative] = useState('');
   const [radioChannel, setRadioChannel] = useState<number | null>(null);
@@ -36,6 +63,8 @@ export function NewIncident() {
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gpsRequested = useRef(false);
+  const zoneTouched = useRef(false);
 
   const suggestedZone = position ? lookupZone(position.lng, position.lat) : null;
   const categoryDef = CATEGORIES.find((c) => c.key === category);
@@ -46,6 +75,13 @@ export function NewIncident() {
       setRisks(data as unknown as Risk[]);
     });
   }, [activeEvent?.id]);
+
+  // GPS cross-checks the zone silently once a fix comes in — but only until
+  // the Loggist has touched the zone picker themselves, so it never stomps
+  // a manual choice.
+  useEffect(() => {
+    if (suggestedZone && !zoneTouched.current) setZone(suggestedZone);
+  }, [suggestedZone]);
 
   const suggestedRisks = risks.filter((r) => r.linkedCategories?.includes(category));
   const otherRisks = risks.filter((r) => !r.linkedCategories?.includes(category));
@@ -70,10 +106,29 @@ export function NewIncident() {
     if (def) setPriority(def.defaultPriority);
   };
 
+  // GPS fires the moment the narrative gets focus — no separate "Capture
+  // GPS" step to tap mid-incident. Guarded so it only asks once per visit;
+  // the small status line below still offers a manual retry if it fails.
+  const onNarrativeFocus = () => {
+    if (gpsRequested.current) return;
+    gpsRequested.current = true;
+    capture();
+  };
+
+  const applyRepeatLast = () => {
+    if (!lastIncident) return;
+    handleCategoryChange(lastIncident.category);
+    zoneTouched.current = true;
+    setZone(lastIncident.zone);
+  };
+
   const applyAiFields = (fields: AppliedFields) => {
     if (fields.category) handleCategoryChange(fields.category);
     if (fields.subcategory) setSubcategory(fields.subcategory);
-    if (fields.zone) setZone(fields.zone);
+    if (fields.zone) {
+      zoneTouched.current = true;
+      setZone(fields.zone);
+    }
     if (fields.priority) setPriority(fields.priority);
     if (fields.radioChannel) setRadioChannel(fields.radioChannel);
     if (fields.assignedAgency) setAssignedAgency(fields.assignedAgency);
@@ -141,6 +196,11 @@ export function NewIncident() {
         ? risks.filter((r) => linkedRiskIds.includes(r.id)).map((r) => r.ref)
         : undefined,
     };
+
+    // A dropdown never blocks the log from existing: this write happens
+    // (online or queued) before anything else, regardless of whether AI
+    // suggestions have arrived or been reviewed.
+    writeLastIncident({ category, zone });
 
     if (!navigator.onLine) {
       enqueueIncident(payload);
@@ -219,18 +279,67 @@ export function NewIncident() {
         </div>
       )}
 
+      {lastIncident && (
+        <button
+          type="button"
+          className="secondary"
+          onClick={applyRepeatLast}
+          style={{ alignSelf: 'flex-start', minHeight: 36, padding: '0 var(--space-3)', fontSize: 'var(--text-sm)' }}
+        >
+          <RotateCcw size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Repeat last: {categoryLabel(lastIncident.category)} · {zoneLabel(lastIncident.zone)}
+        </button>
+      )}
+
+      {/* Capture first, structure second — one field to get the report down,
+          everything else is a fast-follow the Loggist can ignore under pressure. */}
       <label>
         Narrative
         <textarea
+          autoFocus
           required
-          rows={4}
+          rows={5}
           value={narrative}
           onChange={(e) => setNarrative(e.target.value)}
-          placeholder="Type what happened, even roughly — radio-call shorthand is fine…"
+          onFocus={onNarrativeFocus}
+          placeholder="Type — or dictate — what's happening, even roughly. e.g. &quot;crowd building fast at the oyster bar queue, getting pushed toward the walkway, zone b&quot;"
+          style={{ fontSize: 'var(--text-base)' }}
         />
       </label>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginTop: -8 }}>
+        <MapPin size={13} />
+        {geoStatus === 'idle' && 'Location captures automatically once you start typing.'}
+        {geoStatus === 'locating' && 'Locating…'}
+        {geoStatus === 'denied' && (
+          <>
+            Location denied — zone defaults to your last incident.{' '}
+            <button type="button" onClick={capture} style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>
+              Retry
+            </button>
+          </>
+        )}
+        {geoStatus === 'unavailable' && 'GPS unavailable on this device — zone defaults to your last incident.'}
+        {position && (
+          <span className="mono">
+            {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+          </span>
+        )}
+      </div>
+
       <TriageSuggest narrative={narrative} riskContext={risks.map((r) => ({ ref: r.ref, hazard: r.hazard }))} onApply={applyAiFields} />
+
+      <button type="submit" disabled={submitting || !narrative || photoUploading} style={{ minHeight: 52, fontSize: 'var(--text-base)' }}>
+        {submitting ? 'Logging…' : 'Log incident'}
+      </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', margin: 'var(--space-2) 0 calc(-1 * var(--space-2))' }}>
+        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--color-border)' }} />
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Add detail (optional)
+        </span>
+        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--color-border)' }} />
+      </div>
 
       <label>
         Category
@@ -257,24 +366,14 @@ export function NewIncident() {
         </label>
       )}
 
-      <div>
-        <button type="button" className="secondary" onClick={capture}>
-          <MapPin size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
-          Capture GPS
-        </button>
-        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
-          {geoStatus === 'locating' && 'Locating…'}
-          {geoStatus === 'denied' && 'Location denied — select zone manually.'}
-          {geoStatus === 'unavailable' && 'GPS unavailable — select zone manually.'}
-          {position && (
-            <span className="mono">
-              {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <ZonePicker value={zone} onChange={setZone} autoSuggested={suggestedZone} />
+      <ZonePicker
+        value={zone}
+        onChange={(z) => {
+          zoneTouched.current = true;
+          setZone(z);
+        }}
+        autoSuggested={suggestedZone}
+      />
 
       <label>
         Priority
@@ -407,10 +506,6 @@ export function NewIncident() {
           </div>
         </div>
       )}
-
-      <button type="submit" disabled={submitting || !narrative || photoUploading}>
-        {submitting ? 'Logging…' : 'Log incident'}
-      </button>
     </form>
   );
 }
