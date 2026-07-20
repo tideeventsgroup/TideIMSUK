@@ -150,6 +150,97 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Horizontally-scrolling nav strip — avoids wrapping/clipping the header on
+   narrow phones while keeping the sticky header a fixed height. */
+.nav-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Non-essential on a phone-width header — name/role is still visible on the
+   account menu's surrounding context (page content), so it's safe to hide. */
+.header-user-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .header-user-label {
+    display: none;
+  }
+}
+
+/* Below this width the full nav (Live board/Checklists/Risk register/
+   Reports/Setup) can't fit as labeled links — drop to icons only, kept
+   identifiable via title/aria-label, rather than hiding items behind a
+   horizontal scroll a phone user might not discover. */
+@media (max-width: 520px) {
+  .nav-label {
+    display: none;
+  }
+}
+
+/* Two-up label+field rows (e.g. likelihood/consequence, assignee/due) —
+   sit side by side on wide screens, stack on phones instead of squeezing. */
+.field-row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.field-row > * {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+/* Content + side panel — panel moves below content on phones/small tablets
+   instead of squeezing the primary list into a sliver. */
+.split-layout {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.split-layout__side {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .split-layout {
+    flex-direction: column;
+  }
+
+  .split-layout__side {
+    width: 100%;
+  }
+}
+
+/* Stat tile strips — wrap to a 2-up grid instead of squeezing three tiles
+   into an unreadably narrow row. */
+.stat-row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.stat-row > * {
+  flex: 1 1 110px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

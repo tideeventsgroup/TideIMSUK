@@ -5,7 +5,9 @@
  */
 
 export type EscalationLevelKey = 'Level1' | 'Level2' | 'Level3' | 'Level4';
-export type Role = 'Admin' | 'Controller' | 'Loggist' | 'Steward';
+// Medical is a discipline-scoped viewer role (sees only category:Medical
+// incidents) added alongside the OSSP command-structure roles.
+export type Role = 'Admin' | 'Controller' | 'Loggist' | 'Steward' | 'Medical';
 
 export interface EscalationLevelDef {
   key: EscalationLevelKey;
@@ -24,7 +26,7 @@ export const ESCALATION_LEVELS: EscalationLevelDef[] = [
     name: 'Minor',
     whoActs: 'Ground team manages; reports to Event Control',
     appBehaviour: 'Standard log entry. No alert.',
-    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward'],
+    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'],
   },
   {
     key: 'Level2',
@@ -32,7 +34,7 @@ export const ESCALATION_LEVELS: EscalationLevelDef[] = [
     name: 'Significant',
     whoActs: 'Event Control directs FMIC response; Event Director informed',
     appBehaviour: 'Flags on the live board; notifies Controller role.',
-    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward'],
+    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'],
   },
   {
     key: 'Level3',

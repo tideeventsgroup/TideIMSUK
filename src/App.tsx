@@ -1,16 +1,21 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
 import { RoleGate } from './components/RoleGate';
+import { MyZoneSelector } from './components/MyZoneSelector';
+import { PushSubscribeToggle } from './components/PushSubscribeToggle';
 import { LiveBoard } from './pages/LiveBoard';
 import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
 import { Reports } from './pages/Reports';
 import { EventSetup } from './pages/EventSetup';
+import { RiskRegister } from './pages/RiskRegister';
+import { Checklists } from './pages/Checklists';
+import { ChecklistDetail } from './pages/ChecklistDetail';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -18,6 +23,8 @@ function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: t
   return (
     <Link
       to={to}
+      aria-label={label}
+      title={label}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -30,10 +37,12 @@ function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: t
         textDecoration: 'none',
         fontSize: 'var(--text-sm)',
         fontWeight: 600,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
       }}
     >
       <Icon size={16} />
-      {label}
+      <span className="nav-label">{label}</span>
     </Link>
   );
 }
@@ -48,6 +57,7 @@ export default function App() {
       <header
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: 'var(--space-3) var(--space-4)',
@@ -56,25 +66,33 @@ export default function App() {
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          gap: 'var(--space-4)',
+          gap: 'var(--space-2) var(--space-4)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center' }} aria-label="Tide IMS home">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', minWidth: 0, flex: '1 1 auto' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} aria-label="Tide IMS home">
             <Logo />
           </Link>
-          <nav style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          <nav className="nav-scroll" style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'nowrap', minWidth: 0 }}>
             <NavLink to="/" label="Live board" icon={RadioIcon} />
+            <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
+            <RoleGate allow={['Admin', 'Controller']}>
+              <NavLink to="/risk-register" label="Risk register" icon={ShieldAlert} />
+            </RoleGate>
             <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
             <RoleGate allow={['Admin']}>
               <NavLink to="/setup" label="Setup" icon={Settings} />
             </RoleGate>
           </nav>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+          <RoleGate allow={['Steward']}>
+            <MyZoneSelector />
+          </RoleGate>
+          <span className="header-user-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
             {user?.name} <span className="mono">· {user?.role}</span>
           </span>
+          <PushSubscribeToggle />
           <ThemeToggle />
           <button type="button" className="icon-button" onClick={signOut} aria-label="Sign out" title="Sign out">
             <LogOut size={18} />
@@ -88,6 +106,9 @@ export default function App() {
         <Route path="/incidents/:id" element={<IncidentDetail />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/setup" element={<EventSetup />} />
+        <Route path="/risk-register" element={<RiskRegister />} />
+        <Route path="/checklists" element={<Checklists />} />
+        <Route path="/checklists/:id" element={<ChecklistDetail />} />
       </Routes>
     </div>
   );

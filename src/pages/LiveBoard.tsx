@@ -18,9 +18,25 @@ const LEVEL_ORDER: Record<string, number> = { Level4: 0, Level3: 1, Level2: 2, L
 export function LiveBoard() {
   const { user } = useAuth();
   const { activeEvent, loading: eventLoading } = useEvent();
-  const { incidents, loading } = useIncidents(activeEvent?.id ?? null);
+  const { incidents: allIncidents, loading } = useIncidents(activeEvent?.id ?? null);
   const [filters, setFilters] = useState<IncidentFilterState>(EMPTY_FILTERS);
   const [pdfBusy, setPdfBusy] = useState(false);
+
+  // Role-scoped visibility — Steward sees only their assigned zone, Medical
+  // sees only Medical-category incidents, Controller/Admin/Loggist see all.
+  // Client-side only: AppSync authorization doesn't yet enforce this row-level
+  // restriction, so it's a UX scope, not a security boundary.
+  const incidents = useMemo(() => {
+    if (!user) return allIncidents;
+    if (user.role === 'Steward') {
+      if (!user.assignedZone) return allIncidents;
+      return allIncidents.filter((i) => i.zone === user.assignedZone || i.zone === 'WholeSite');
+    }
+    if (user.role === 'Medical') {
+      return allIncidents.filter((i) => i.category === 'Medical');
+    }
+    return allIncidents;
+  }, [allIncidents, user]);
 
   const filtered = useMemo(() => applyIncidentFilters(incidents, filters), [incidents, filters]);
 
@@ -97,7 +113,7 @@ export function LiveBoard() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', padding: '0 var(--space-4) var(--space-4)' }}>
+      <div className="stat-row" style={{ padding: '0 var(--space-4) var(--space-4)' }}>
         <StatTile label="Open" value={openCount} />
         <StatTile label="In progress" value={inProgressCount} />
         <StatTile label="Active L3/L4" value={criticalCount} accent={criticalCount > 0 ? 'var(--sev-3)' : undefined} />
@@ -105,7 +121,7 @@ export function LiveBoard() {
 
       <IncidentFilters value={filters} onChange={setFilters} />
 
-      <div style={{ display: 'flex', gap: 'var(--space-4)', padding: '0 var(--space-4) var(--space-4)', alignItems: 'flex-start' }}>
+      <div className="split-layout" style={{ padding: '0 var(--space-4) var(--space-4)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading && <p style={{ color: 'var(--color-text-secondary)' }}>Loading…</p>}
           {!loading && sorted.length === 0 && incidents.length === 0 && (
@@ -118,7 +134,7 @@ export function LiveBoard() {
             <IncidentCard key={incident.id} incident={incident} />
           ))}
         </div>
-        <div style={{ width: 220, flexShrink: 0 }}>
+        <div className="split-layout__side">
           <RadioChannelPanel />
           <WindConditionsPanel />
         </div>

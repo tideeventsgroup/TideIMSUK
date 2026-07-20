@@ -1,6 +1,8 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { triageAssist } from '../functions/triage-assist/resource';
 import { shiftSummary } from '../functions/shift-summary/resource';
+import { checklistGenerator } from '../functions/checklist-generator/resource';
+import { sendEscalationPush } from '../functions/send-escalation-push/resource';
 
 /**
  * Data model per Build Plan Section 3.
@@ -17,6 +19,11 @@ const IncidentUpdate = a.customType({
   userId: a.string().required(),
   userName: a.string().required(),
   text: a.string().required(),
+});
+
+const RiskControl = a.customType({
+  label: a.string().required(),
+  checked: a.boolean().required(),
 });
 
 const schema = a.schema({
@@ -49,6 +56,35 @@ const schema = a.schema({
 
   EscalationLevel: a.enum(['Level1', 'Level2', 'Level3', 'Level4']),
 
+  ResidualRating: a.enum(['Low', 'Medium', 'High', 'Critical']),
+
+  // OSSP hazard register R01–R14 (WeTrack-style risk register). Risks are
+  // per-event (like Incident) so residual ratings/controls can be tailored
+  // to a specific site, while `ref` + `hazard` are seeded from the same
+  // standard OSSP template each time (see src/utils/seedRiskRegister.ts).
+  Risk: a
+    .model({
+      eventId: a.id().required(),
+      event: a.belongsTo('Event', 'eventId'),
+      ref: a.string().required(), // e.g. "R01"
+      hazard: a.string().required(),
+      likelihood: a.integer().required(), // 1-5
+      consequence: a.integer().required(), // 1-5
+      score: a.integer().required(), // likelihood * consequence, client-computed
+      controls: a.ref('RiskControl').array(),
+      residualRating: a.ref('ResidualRating').required(),
+      linkedIncidentIds: a.string().array(),
+      // Category keys (src/constants/taxonomy.ts) this risk auto-suggests
+      // against on incident creation.
+      linkedCategories: a.string().array(),
+    })
+    .authorization((allow) => [
+      allow.groups(['Admin', 'Controller']).to(['create', 'update', 'delete']),
+      allow.authenticated().to(['read']),
+    ]),
+
+  RiskControl,
+
   Event: a
     .model({
       name: a.string().required(),
@@ -57,6 +93,8 @@ const schema = a.schema({
       endDate: a.date().required(),
       zones: a.string().array(),
       incidents: a.hasMany('Incident', 'eventId'),
+      risks: a.hasMany('Risk', 'eventId'),
+      checklistInstances: a.hasMany('ChecklistInstance', 'eventId'),
     })
     .authorization((allow) => [
       allow.groups(['Admin']).to(['create', 'update', 'delete']),
@@ -69,12 +107,27 @@ const schema = a.schema({
       name: a.string().required(),
       role: a.string().required(),
       agency: a.string(),
+      // Steward role-scoped views (WeTrack-inspired): a Steward only sees
+      // incidents in their assigned zone. Self-service (set via a control
+      // in the header), client-side filter only — see LiveBoard.tsx
+      // caveat, same limitation as the Level 4 lock.
+      assignedZone: a.string(),
     })
     .authorization((allow) => [
       allow.groups(['Admin']).to(['create', 'update', 'delete', 'read']),
       allow.authenticated().to(['read']),
-      allow.ownerDefinedIn('cognitoSub').to(['read']),
+      allow.ownerDefinedIn('cognitoSub').to(['read', 'create', 'update']),
     ]),
+
+  // Web Push subscriptions (Event Control enhancement) — one per
+  // device/browser a user has enabled notifications on.
+  PushSubscription: a
+    .model({
+      endpoint: a.string().required(),
+      p256dh: a.string().required(),
+      auth: a.string().required(),
+    })
+    .authorization((allow) => [allow.owner()]),
 
   Incident: a
     .model({
@@ -96,7 +149,7 @@ const schema = a.schema({
         .ref('EscalationLevel')
         .required()
         .authorization((allow) => [
-          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward']).to(['read']),
+          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['read']),
           allow.authenticated().to(['read']),
           allow.groups(['Controller', 'Admin']).to(['update']),
         ]),
@@ -110,6 +163,8 @@ const schema = a.schema({
       lng: a.float(),
       updates: a.ref('IncidentUpdate').array(),
       attachmentKeys: a.string().array(),
+      // Risk register tagging (WeTrack-inspired) — optional, any role may tag.
+      linkedRiskIds: a.string().array(),
       // Level 4 locks the incident to Controller/Admin only (OSSP command handover).
       // NOTE: this only field-restricts writes to `locked` itself. Enforcing the lock
       // across every other field (status, updates[], etc.) needs a custom resolver —
@@ -124,21 +179,92 @@ const schema = a.schema({
     .authorization((allow) => [
       // escalationLevel and locked are field-level restricted to Controller/Admin above;
       // all roles may otherwise create/read/update (append updates[], change status).
-      allow.groups(['Admin', 'Controller', 'Loggist', 'Steward']).to(['create', 'read', 'update']),
+      allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read', 'update']),
       allow.authenticated().to(['read']),
     ]),
 
   IncidentUpdate,
 
+  ChecklistItemStatus: a.enum(['Pending', 'Done']),
+
+  // Template definition — global/reusable across events, not eventId-scoped.
+  ChecklistTemplateItem: a.customType({
+    label: a.string().required(),
+    requiresPhoto: a.boolean().required(),
+    requiresSignoff: a.boolean().required(),
+  }),
+
+  // Instance item — same shape as the template item plus completion state.
+  // Completion is append-only in spirit (same discipline as Incident.updates[]):
+  // the client rewrites the array on each mutation (a DynamoDB/AppSync list-field
+  // constraint, not a choice), but never edits a previously Done item backward —
+  // only status/completedBy/completedAt/photoS3Key move forward.
+  ChecklistInstanceItem: a.customType({
+    label: a.string().required(),
+    requiresPhoto: a.boolean().required(),
+    requiresSignoff: a.boolean().required(),
+    status: a.ref('ChecklistItemStatus').required(),
+    completedBy: a.string(),
+    completedAt: a.datetime(),
+    photoS3Key: a.string(),
+    notes: a.string(),
+  }),
+
+  // Reusable template (Jobs & Checklists module) — seeded from OSSP §18-19
+  // (structural/electrical/fire/gas sign-off) via src/utils/seedChecklists.ts.
+  // `recurring: true` templates get a fresh ChecklistInstance generated daily
+  // per active event by the checklist-generator scheduled function.
+  ChecklistTemplate: a
+    .model({
+      name: a.string().required(),
+      recurring: a.boolean().required(),
+      items: a.ref('ChecklistTemplateItem').array().required(),
+    })
+    .authorization((allow) => [
+      allow.groups(['Admin', 'Controller']).to(['create', 'update', 'delete']),
+      allow.authenticated().to(['read']),
+    ]),
+
+  // A dated checklist run. `templateId` is null for ad-hoc jobs, including
+  // ones created via the Incident → Job conversion button (sourceIncidentId
+  // back-reference).
+  ChecklistInstance: a
+    .model({
+      eventId: a.id().required(),
+      event: a.belongsTo('Event', 'eventId'),
+      templateId: a.id(),
+      title: a.string().required(),
+      date: a.date().required(),
+      assignee: a.string(),
+      dueAt: a.datetime(),
+      sourceIncidentId: a.id(),
+      items: a.ref('ChecklistInstanceItem').array().required(),
+    })
+    .authorization((allow) => [
+      allow.groups(['Admin', 'Controller', 'Loggist', 'Steward']).to(['create', 'read', 'update']),
+      allow.authenticated().to(['read']),
+    ]),
+
   // Server-side only: browser never calls Groq directly (Section 11).
   triageAssist: a
     .query()
-    .arguments({ narrative: a.string().required() })
+    .arguments({
+      narrative: a.string().required(),
+      // JSON-stringified [{ref, hazard}] for the active event's risk register,
+      // so suggestions can cite real refs instead of guessing.
+      riskContext: a.string(),
+    })
     .returns(
       a.customType({
         suggestedCategory: a.string(),
+        suggestedSubcategory: a.string(),
         suggestedZone: a.string(),
         suggestedLevel: a.string(),
+        suggestedPriority: a.string(),
+        suggestedRadioChannel: a.integer(),
+        suggestedAssignedAgency: a.string(),
+        suggestedRiskRefs: a.string().array(),
+        narrativeSummary: a.string(),
         rationale: a.string(),
       }),
     )
@@ -153,7 +279,29 @@ const schema = a.schema({
     .returns(a.string())
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(shiftSummary)),
-});
+
+  // Fans out a Web Push notification to every stored subscription. Called
+  // by the client only from the Level 3/4 declare action (Controller/Admin
+  // only) — see IncidentDetail.tsx.
+  sendEscalationPush: a
+    .mutation()
+    .arguments({
+      incidentId: a.id().required(),
+      level: a.string().required(),
+      category: a.string().required(),
+      zone: a.string().required(),
+      narrative: a.string().required(),
+    })
+    .returns(a.integer())
+    .authorization((allow) => [allow.groups(['Controller', 'Admin'])])
+    .handler(a.handler.function(sendEscalationPush)),
+})
+  // Schema-level grants: resource access is schema-wide (not scoped to
+  // individual models) in Gen2.
+  .authorization((allow) => [
+    allow.resource(checklistGenerator).to(['query', 'mutate']),
+    allow.resource(sendEscalationPush).to(['query', 'mutate']),
+  ]);
 
 export type Schema = ClientSchema<typeof schema>;
 

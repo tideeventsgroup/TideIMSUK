@@ -87,6 +87,26 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           <Lock size={12} /> Locked — Controller/Admin only
         </div>
       )}
+
+      {(incident.linkedRiskIds ?? []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 'var(--space-2)' }}>
+          {(incident.linkedRiskIds ?? []).map((refId) => (
+            <span
+              key={refId}
+              className="mono"
+              style={{
+                fontSize: 10,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border-strong)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {refId}
+            </span>
+          ))}
+        </div>
+      )}
     </Link>
   );
 }

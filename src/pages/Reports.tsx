@@ -77,7 +77,7 @@ export function Reports() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+      <div className="stat-row" style={{ marginTop: 'var(--space-4)' }}>
         <StatTile label="Open" value={summary.totalOpen} />
         <StatTile label="In progress" value={summary.totalInProgress} />
         <StatTile label="Total logged" value={incidents.length} />

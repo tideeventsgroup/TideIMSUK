@@ -95,15 +95,17 @@ export function EventSetup() {
             key={event.id}
             style={{
               display: 'flex',
+              flexWrap: 'wrap',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: 'var(--space-2)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
               padding: 'var(--space-3)',
               background: 'var(--color-surface-raised)',
             }}
           >
-            <div>
+            <div style={{ minWidth: 0 }}>
               <strong>{event.name}</strong>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
                 {event.venue} · <span className="mono">{event.startDate} – {event.endDate}</span>
@@ -141,12 +143,12 @@ export function EventSetup() {
           <input required value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="e.g. Breastworks, Stranraer" />
         </label>
 
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <label style={{ flex: 1 }}>
+        <div className="field-row">
+          <label>
             Start date
             <input required type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
           </label>
-          <label style={{ flex: 1 }}>
+          <label>
             End date
             <input required type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
           </label>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Lock, MapPin, Radio as RadioIcon, FileText } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Lock, MapPin, Radio as RadioIcon, FileText, ListChecks } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { categoryLabel } from '../constants/taxonomy';
@@ -13,12 +13,18 @@ import type { Incident, IncidentStatus } from '../types/incident';
 
 export function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [incident, setIncident] = useState<Incident | null>(null);
   const [updateText, setUpdateText] = useState('');
   const [busy, setBusy] = useState(false);
   const [pendingLevel, setPendingLevel] = useState<EscalationLevelKey | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobAssignee, setJobAssignee] = useState('');
+  const [jobDueAt, setJobDueAt] = useState('');
+  const [jobBusy, setJobBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -88,6 +94,19 @@ export function IncidentDetail() {
         escalationLevel: newLevel,
         locked: newLevel === 'Level4',
       });
+      if (newLevel === 'Level3' || newLevel === 'Level4') {
+        try {
+          await client.mutations.sendEscalationPush({
+            incidentId: incident.id,
+            level: newLevel,
+            category: incident.category,
+            zone: incident.zone,
+            narrative: incident.narrative,
+          });
+        } catch {
+          // Push fan-out is best-effort — the escalation itself has already been declared.
+        }
+      }
     } finally {
       setBusy(false);
       setPendingLevel(null);
@@ -112,15 +131,87 @@ export function IncidentDetail() {
     }
   };
 
+  const openJobForm = () => {
+    setJobTitle(`Follow-up: ${categoryLabel(incident.category)}${incident.subcategory ? ' — ' + incident.subcategory : ''}`);
+    setJobAssignee('');
+    setJobDueAt('');
+    setShowJobForm(true);
+  };
+
+  const createJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobTitle.trim()) return;
+    setJobBusy(true);
+    try {
+      const { data: created } = await client.models.ChecklistInstance.create({
+        eventId: incident.eventId,
+        title: jobTitle.trim(),
+        date: new Date().toISOString().slice(0, 10),
+        assignee: jobAssignee || undefined,
+        dueAt: jobDueAt ? new Date(jobDueAt).toISOString() : undefined,
+        sourceIncidentId: incident.id,
+        items: [{ label: jobTitle.trim(), requiresPhoto: false, requiresSignoff: false, status: 'Pending' }],
+      });
+      setShowJobForm(false);
+      if (created) navigate(`/checklists/${created.id}`);
+    } finally {
+      setJobBusy(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-4)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         <SeverityBadge level={incident.escalationLevel} />
-        <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
-          <FileText size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-          {pdfBusy ? 'Preparing…' : 'Download PDF'}
-        </button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          <button type="button" className="secondary" onClick={openJobForm}>
+            <ListChecks size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+            Convert to job
+          </button>
+          <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
+            <FileText size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+            {pdfBusy ? 'Preparing…' : 'Download PDF'}
+          </button>
+        </div>
       </div>
+
+      {showJobForm && (
+        <form
+          onSubmit={createJob}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-3)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-4)',
+            marginBottom: 'var(--space-3)',
+          }}
+        >
+          <label>
+            Job title
+            <input required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+          </label>
+          <div className="field-row">
+            <label>
+              Assignee
+              <input value={jobAssignee} onChange={(e) => setJobAssignee(e.target.value)} placeholder="Name / role" />
+            </label>
+            <label>
+              Due
+              <input type="datetime-local" value={jobDueAt} onChange={(e) => setJobDueAt(e.target.value)} />
+            </label>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            <button type="submit" disabled={jobBusy || !jobTitle.trim()}>
+              {jobBusy ? 'Creating…' : 'Create job'}
+            </button>
+            <button type="button" className="secondary" onClick={() => setShowJobForm(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
       <h1 style={{ fontSize: 'var(--text-lg)' }}>
         {categoryLabel(incident.category)}
         {incident.subcategory ? ` — ${incident.subcategory}` : ''}
@@ -140,6 +231,27 @@ export function IncidentDetail() {
         <span className="mono">{new Date(incident.timestamp).toLocaleString('en-GB')}</span>
       </p>
       <p style={{ whiteSpace: 'pre-wrap' }}>{incident.narrative}</p>
+
+      {(incident.linkedRiskIds ?? []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>Linked risks:</span>
+          {(incident.linkedRiskIds ?? []).map((refId) => (
+            <span
+              key={refId}
+              className="mono"
+              style={{
+                fontSize: 11,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border-strong)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {refId}
+            </span>
+          ))}
+        </div>
+      )}
 
       {incident.locked && (
         <p style={{ color: 'var(--sev-4)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>

@@ -32,6 +32,7 @@ export interface Incident {
   lng?: number | null;
   updates: IncidentUpdateEntry[];
   attachmentKeys?: string[] | null;
+  linkedRiskIds?: string[] | null;
   locked: boolean;
   resolvedAt?: string | null;
 }

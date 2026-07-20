@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       includeAssets: ['favicon-32.png', 'favicon-48.png', 'icons/*.png', 'brand/*.png'],
       manifest: {
@@ -23,13 +26,14 @@ export default defineConfig({
           { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
+      injectManifest: {
         // App shell precached; API traffic goes over AppSync (handled by the
         // offline write queue in src/offline/queue.ts), not runtime-cached here.
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       },
       devOptions: {
         enabled: false,
+        type: 'module',
       },
     }),
   ],

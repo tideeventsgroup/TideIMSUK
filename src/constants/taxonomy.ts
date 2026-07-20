@@ -27,6 +27,8 @@ export interface CategoryDef {
   label: string;
   defaultRadioChannel: number | null;
   subcategories: string[];
+  /** Pre-fills the incident's Priority field — a starting point staff can override before submitting. */
+  defaultPriority: 'Standard' | 'Major';
 }
 
 export const CATEGORIES: CategoryDef[] = [
@@ -34,6 +36,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'CrowdMgmt',
     label: 'Crowd & Site',
     defaultRadioChannel: 2,
+    defaultPriority: 'Standard',
     subcategories: [
       'Crowd density / overcrowding (zone-specific)',
       'Blocked or reduced emergency egress',
@@ -46,6 +49,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'Medical',
     label: 'Medical & Welfare',
     defaultRadioChannel: 4,
+    defaultPriority: 'Standard',
     subcategories: [
       'Medical emergency — cardiac/serious injury',
       'Minor first aid',
@@ -62,6 +66,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'Security',
     label: 'Security & Crime',
     defaultRadioChannel: 5,
+    defaultPriority: 'Standard',
     subcategories: [
       'Alcohol-related disorder',
       'Assault / physical altercation',
@@ -78,6 +83,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'MissingPerson',
     label: 'Missing / Vulnerable Persons',
     defaultRadioChannel: 2,
+    defaultPriority: 'Standard',
     subcategories: [
       'Lost or separated child',
       'Missing vulnerable adult',
@@ -88,6 +94,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'FireEvac',
     label: 'Fire & Structural',
     defaultRadioChannel: 5,
+    defaultPriority: 'Major',
     subcategories: [
       'Fire — marquee/catering/electrical',
       'Marquee structural failure or wind-threshold breach',
@@ -99,6 +106,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'Weather',
     label: 'Weather & Environment',
     defaultRadioChannel: 2,
+    defaultPriority: 'Standard',
     subcategories: [
       'Severe weather / wind threshold triggered',
       'Lightning',
@@ -109,12 +117,14 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'Fireworks',
     label: 'Fireworks (Friday-specific)',
     defaultRadioChannel: 3,
+    defaultPriority: 'Standard',
     subcategories: ['Wind-abort decision', 'Exclusion zone breach', 'Post-display dud/incident'],
   },
   {
     key: 'VehicleTraffic',
     label: 'Vehicle & Traffic',
     defaultRadioChannel: 1,
+    defaultPriority: 'Standard',
     subcategories: [
       'Vehicle/pedestrian conflict on quayside',
       'Unauthorised vehicle access attempt',
@@ -126,6 +136,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'CTSuspicious',
     label: "Counter-Terrorism (Martyn's Law)",
     defaultRadioChannel: 5,
+    defaultPriority: 'Major',
     subcategories: [
       'CT — hostile reconnaissance report',
       'CT — suspicious item (cordon procedure)',
@@ -140,6 +151,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'InfrastructureEquip',
     label: 'Operations & Infrastructure',
     defaultRadioChannel: 3,
+    defaultPriority: 'Standard',
     subcategories: [
       'Radio/comms failure — handset loss/fault',
       'PA/sound system failure',
@@ -152,12 +164,14 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'HarbourWaterSafety',
     label: 'Marine (Harbour-Specific)',
     defaultRadioChannel: 4,
+    defaultPriority: 'Major',
     subcategories: ['Vessel movement conflict — Harbour Master liaison', 'HM Coastguard called'],
   },
   {
     key: 'Licensing',
     label: 'Licensing & Compliance',
     defaultRadioChannel: 3,
+    defaultPriority: 'Standard',
     subcategories: [
       'Alcohol service refusal / Challenge 25 incident',
       'Licensing breach observation',
@@ -168,6 +182,7 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'VolunteerStaff',
     label: 'Volunteer / Staff',
     defaultRadioChannel: 3,
+    defaultPriority: 'Standard',
     subcategories: [
       'Volunteer/steward incorrect response requiring correction',
       'Staff injury',
@@ -178,12 +193,14 @@ export const CATEGORIES: CategoryDef[] = [
     key: 'LostProperty',
     label: 'Lost Property',
     defaultRadioChannel: 3,
+    defaultPriority: 'Standard',
     subcategories: ['Lost item reported', 'Found item logged'],
   },
   {
     key: 'Other',
     label: 'Other',
     defaultRadioChannel: null,
+    defaultPriority: 'Standard',
     subcategories: [],
   },
 ];

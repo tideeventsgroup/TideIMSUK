@@ -117,6 +117,7 @@ export async function exportIncidentToPdf(incident: Incident) {
       ['Status', incident.status],
       ['Priority', incident.priority],
       ['Radio channel', incident.radioChannel ? `Ch${incident.radioChannel}` : '—'],
+      ['Linked risks', (incident.linkedRiskIds ?? []).join(', ') || '—'],
       ['GPS', incident.lat && incident.lng ? `${incident.lat.toFixed(5)}, ${incident.lng.toFixed(5)}` : '—'],
       ['Logged by', `${incident.loggedByName} (${incident.loggedByRole})`],
       ['Assigned agency', incident.assignedAgency ?? '—'],
@@ -235,19 +236,20 @@ export async function exportHandoverReportToPdf(opts: {
 
   autoTable(doc, {
     startY: y,
-    head: [['Time', 'Level', 'Category', 'Zone', 'Narrative']],
+    head: [['Time', 'Level', 'Category', 'Zone', 'Risks', 'Narrative']],
     body: summary.criticalOrMajor.length
       ? summary.criticalOrMajor.map((i) => [
           new Date(i.timestamp).toLocaleString('en-GB'),
           severityLabel(i.escalationLevel),
           categoryLabel(i.category),
           zoneLabel(i.zone),
+          (i.linkedRiskIds ?? []).join(', ') || '—',
           i.narrative,
         ])
-      : [['None', '', '', '', '']],
+      : [['None', '', '', '', '', '']],
     headStyles: { fillColor: [51, 51, 51] },
     styles: { fontSize: 8 },
-    columnStyles: { 4: { cellWidth: 70 } },
+    columnStyles: { 5: { cellWidth: 65 } },
   });
 
   addFooter(doc);
@@ -264,7 +266,7 @@ export async function exportIncidentLogToPdf(incidents: Incident[], event: Event
 
   autoTable(doc, {
     startY: y,
-    head: [['Time', 'Level', 'Category', 'Zone', 'Status', 'Priority', 'Logged by', 'Narrative']],
+    head: [['Time', 'Level', 'Category', 'Zone', 'Status', 'Priority', 'Risks', 'Logged by', 'Narrative']],
     body: incidents.map((i) => [
       new Date(i.timestamp).toLocaleString('en-GB'),
       severityLabel(i.escalationLevel),
@@ -272,12 +274,13 @@ export async function exportIncidentLogToPdf(incidents: Incident[], event: Event
       zoneLabel(i.zone),
       i.status,
       i.priority,
+      (i.linkedRiskIds ?? []).join(', ') || '—',
       i.loggedByName,
       i.narrative,
     ]),
     headStyles: { fillColor: [51, 51, 51] },
     styles: { fontSize: 8 },
-    columnStyles: { 7: { cellWidth: 90 } },
+    columnStyles: { 8: { cellWidth: 80 } },
   });
 
   addFooter(doc);
