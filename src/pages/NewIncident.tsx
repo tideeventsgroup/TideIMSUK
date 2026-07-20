@@ -148,8 +148,14 @@ export function NewIncident() {
     }
 
     try {
-      const { data: created } = await client.models.Incident.create(payload);
-      if (created && linkedRiskIds.length) {
+      const { data: created, errors } = await client.models.Incident.create(payload);
+      if (!created) {
+        // client.models.X.create() resolves (doesn't throw) on GraphQL/authorization
+        // errors — data is just null. Treat that the same as a thrown network error:
+        // queue it locally rather than silently navigating away as if it worked.
+        throw new Error(errors?.[0]?.message ?? 'Incident create returned no data');
+      }
+      if (linkedRiskIds.length) {
         // Denormalized back-reference for the risk register's "incidents per ref" view.
         // Best-effort only — not queued offline, since it touches other parties' records.
         await Promise.all(
