@@ -90,10 +90,16 @@ const schema = a.schema({
       status: a.ref('IncidentStatus').required(),
       priority: a.ref('Priority').required(),
       // Only Tide declares incident level (OSSP 5.2) — Controller/Admin only.
+      // Field-level auth on a required field overrides the model-level default for
+      // that field, so read must be re-granted explicitly alongside the update restriction.
       escalationLevel: a
         .ref('EscalationLevel')
         .required()
-        .authorization((allow) => [allow.groups(['Controller', 'Admin']).to(['update'])]),
+        .authorization((allow) => [
+          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward']).to(['read']),
+          allow.authenticated().to(['read']),
+          allow.groups(['Controller', 'Admin']).to(['update']),
+        ]),
       loggedByUserId: a.string().required(),
       loggedByName: a.string().required(),
       loggedByRole: a.string().required(),
