@@ -28,9 +28,10 @@ async function scanAllSubscriptions(): Promise<Record<string, any>[]> {
 }
 
 export const handler: Handler = async (event) => {
-  const { title, body, url, urgent, alarm } = event.arguments;
+  const { title, body, url, urgent, alarm, targetUserId } = event.arguments;
 
-  const subscriptions = await scanAllSubscriptions();
+  const allSubscriptions = await scanAllSubscriptions();
+  const subscriptions = targetUserId ? allSubscriptions.filter((s) => s.userId === targetUserId) : allSubscriptions;
   const payload = JSON.stringify({ title, body, url: url ?? '/', urgent: urgent ?? false, alarm: alarm ?? false });
 
   let sent = 0;

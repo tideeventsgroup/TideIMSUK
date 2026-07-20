@@ -7,9 +7,9 @@ import { client } from '../data/client';
  * the primary action, since the incident/update itself has already been
  * written by the time this runs.
  */
-export async function pushNotify(title: string, body: string, url?: string, urgent = false, alarm = false) {
+export async function pushNotify(title: string, body: string, url?: string, urgent = false, alarm = false, targetUserId?: string) {
   try {
-    await client.mutations.sendEscalationPush({ title, body, url, urgent, alarm });
+    await client.mutations.sendEscalationPush({ title, body, url, urgent, alarm, targetUserId });
   } catch {
     // best effort — device subscriptions/network issues shouldn't surface as user-facing errors
   }

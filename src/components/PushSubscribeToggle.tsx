@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Bell, BellOff } from 'lucide-react';
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../utils/pushSubscription';
+import { useAuth } from '../context/AuthContext';
 
 /** Lets a device opt in to push alerts for Level 3/4 escalations. */
 export function PushSubscribeToggle() {
+  const { user } = useAuth();
   const [supported, setSupported] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -25,7 +27,7 @@ export function PushSubscribeToggle() {
         await unsubscribeFromPush();
         setSubscribed(false);
       } else {
-        const ok = await subscribeToPush();
+        const ok = await subscribeToPush(user?.userId);
         setSubscribed(ok);
       }
     } finally {

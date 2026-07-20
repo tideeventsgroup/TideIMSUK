@@ -3,6 +3,7 @@ import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-ampli
 import { client } from '../data/client';
 import type { Role } from '../constants/escalation';
 import type { ZoneKey } from '../constants/zones';
+import type { StaffStatus } from '../constants/staffStatus';
 
 interface AuthState {
   userId: string;
@@ -11,6 +12,7 @@ interface AuthState {
   role: Role;
   groups: string[];
   assignedZone: ZoneKey | null;
+  status: StaffStatus | null;
 }
 
 const ROLE_PRIORITY: Role[] = ['event-control', 'fmic', 'staff', 'view-only'];
@@ -40,11 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const groups = (session.tokens?.idToken?.payload['cognito:groups'] as string[] | undefined) ?? [];
 
       let assignedZone: ZoneKey | null = null;
+      let status: StaffStatus | null = null;
       try {
         const { data: profiles } = await client.models.UserProfile.list({
           filter: { cognitoSub: { eq: current.userId } },
         });
         assignedZone = (profiles[0]?.assignedZone as ZoneKey | undefined) ?? null;
+        status = (profiles[0]?.status as StaffStatus | undefined) ?? null;
       } catch {
         // Non-fatal — zone-scoping just falls back to unfiltered.
       }
@@ -56,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: primaryRole(groups),
         groups,
         assignedZone,
+        status,
       });
     } catch {
       setUser(null);

@@ -100,6 +100,8 @@ const schema = a.schema({
       allow.authenticated().to(['read']),
     ]),
 
+  StaffStatus: a.enum(['OnPost', 'Break', 'OffDuty']),
+
   UserProfile: a
     .model({
       cognitoSub: a.string().required(),
@@ -111,20 +113,33 @@ const schema = a.schema({
       // in the header), client-side filter only — see LiveBoard.tsx
       // caveat, same limitation as the Level 4 lock.
       assignedZone: a.string(),
+      // Self-reported shift presence, shown on the FMIC ground roster
+      // (FMICGround.tsx). Not authoritative — a steward could forget to
+      // toggle it — same "trust the reporter" limitation as everything
+      // else self-service in this app.
+      status: a.ref('StaffStatus'),
+      statusUpdatedAt: a.datetime(),
     })
     .authorization((allow) => [
       allow.groups(['event-control']).to(['create', 'update', 'delete', 'read']),
+      // FMIC needs write access to redeploy a steward to a different zone
+      // from the ground roster (FMICGround.tsx) — read/update only, not
+      // create/delete, since profile creation stays event-control/self-service.
+      allow.groups(['fmic']).to(['read', 'update']),
       allow.authenticated().to(['read']),
       allow.ownerDefinedIn('cognitoSub').to(['read', 'create', 'update']),
     ]),
 
   // Web Push subscriptions (Event Control enhancement) — one per
-  // device/browser a user has enabled notifications on.
+  // device/browser a user has enabled notifications on. `userId` (cognitoSub)
+  // lets sendEscalationPush target a single person's devices (e.g. a
+  // redeploy notice) instead of always fanning out to everyone.
   PushSubscription: a
     .model({
       endpoint: a.string().required(),
       p256dh: a.string().required(),
       auth: a.string().required(),
+      userId: a.string(),
     })
     .authorization((allow) => [allow.owner()]),
 
@@ -330,6 +345,10 @@ const schema = a.schema({
       url: a.string(),
       urgent: a.boolean(),
       alarm: a.boolean(),
+      // Omit to broadcast to every subscribed device (incident-logging
+      // path); set to a cognitoSub to reach only that person's devices
+      // (e.g. FMICGround.tsx's redeploy notice).
+      targetUserId: a.string(),
     })
     .returns(a.integer())
     .authorization((allow) => [allow.groups(['event-control', 'fmic', 'staff'])])
@@ -356,6 +375,53 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.groups(['event-control', 'fmic', 'staff']).to(['create', 'read']),
     ]),
+
+  // FMIC ground ops (src/pages/FMICGround.tsx) — append-only logs, never
+  // updated/deleted, so the history itself is the post-event review record.
+  // Command-role tools only: staff don't read these back.
+
+  // One row per redeploy. `fromZone` is the zone the steward was in before
+  // this move (may be null if they had none set yet).
+  ZoneReassignment: a
+    .model({
+      eventId: a.id().required(),
+      userId: a.string().required(),
+      userName: a.string().required(),
+      fromZone: a.string(),
+      toZone: a.string().required(),
+      reassignedByUserId: a.string().required(),
+      reassignedByName: a.string().required(),
+      timestamp: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
+
+  // Roll-call log (Section 15.1) — one row per confirm/reset tap. The
+  // current state of a zone is the most recent row for that zone+event,
+  // computed client-side; older rows stay as the audit trail.
+  ZoneClearance: a
+    .model({
+      eventId: a.id().required(),
+      zone: a.string().required(),
+      cleared: a.boolean().required(),
+      confirmedByUserId: a.string().required(),
+      confirmedByName: a.string().required(),
+      timestamp: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
+
+  // Structured shift handover between the two FMICs (Section 5.1: day-to-day
+  // allocation "confirmed at the daily briefing and logged").
+  ShiftHandoverNote: a
+    .model({
+      eventId: a.id().required(),
+      openItems: a.string(),
+      watchItems: a.string(),
+      whereaboutsNote: a.string(),
+      authoredByUserId: a.string().required(),
+      authoredByName: a.string().required(),
+      timestamp: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

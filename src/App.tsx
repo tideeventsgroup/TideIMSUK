@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
@@ -9,6 +9,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
 import { RoleGate } from './components/RoleGate';
 import { MyZoneSelector } from './components/MyZoneSelector';
+import { MyStatusToggle } from './components/MyStatusToggle';
 import { PushSubscribeToggle } from './components/PushSubscribeToggle';
 import { LiveBoard } from './pages/LiveBoard';
 import { StaffHome } from './pages/StaffHome';
@@ -20,6 +21,7 @@ import { RiskRegister } from './pages/RiskRegister';
 import { Checklists } from './pages/Checklists';
 import { ChecklistDetail } from './pages/ChecklistDetail';
 import { Messages } from './pages/Messages';
+import { FMICGround } from './pages/FMICGround';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -88,6 +90,7 @@ export default function App() {
               <NavLink to="/" label="Live board" icon={RadioIcon} />
             </RoleGate>
             <RoleGate allow={['event-control', 'fmic']}>
+              <NavLink to="/ground" label="Ground ops" icon={Users} />
               <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
             </RoleGate>
             <RoleGate allow={['event-control']}>
@@ -105,6 +108,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
           <RoleGate allow={['staff']}>
             <MyZoneSelector />
+            <MyStatusToggle />
           </RoleGate>
           <span className="header-user-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
             {user?.name} <span className="mono">· {user && roleLabel(user.role)}</span>
@@ -127,6 +131,7 @@ export default function App() {
         <Route path="/checklists" element={<Checklists />} />
         <Route path="/checklists/:id" element={<ChecklistDetail />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/ground" element={<FMICGround />} />
       </Routes>
     </div>
   );

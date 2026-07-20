@@ -11,8 +11,13 @@ export async function getExistingSubscription(): Promise<PushSubscription | null
   return registration.pushManager.getSubscription();
 }
 
-/** Requests notification permission, subscribes this device, and persists the subscription. */
-export async function subscribeToPush(): Promise<boolean> {
+/**
+ * Requests notification permission, subscribes this device, and persists
+ * the subscription. `userId` (cognitoSub) lets sendEscalationPush target
+ * this specific person later (e.g. a redeploy notice) — omit it and the
+ * subscription only ever receives broadcasts.
+ */
+export async function subscribeToPush(userId?: string): Promise<boolean> {
   if (!isPushSupported()) return false;
 
   const permission = await Notification.requestPermission();
@@ -31,6 +36,7 @@ export async function subscribeToPush(): Promise<boolean> {
     endpoint: json.endpoint,
     p256dh: json.keys.p256dh,
     auth: json.keys.auth,
+    userId,
   });
 
   return true;
