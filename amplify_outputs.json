@@ -19,28 +19,23 @@
     ],
     "groups": [
       {
-        "Admin": {
+        "event-control": {
           "precedence": 0
         }
       },
       {
-        "Controller": {
+        "fmic": {
           "precedence": 1
         }
       },
       {
-        "Loggist": {
+        "staff": {
           "precedence": 2
         }
       },
       {
-        "Steward": {
+        "view-only": {
           "precedence": 3
-        }
-      },
-      {
-        "Medical": {
-          "precedence": 4
         }
       }
     ],
@@ -204,8 +199,7 @@
                       "delete"
                     ],
                     "groups": [
-                      "Admin",
-                      "Controller"
+                      "event-control"
                     ]
                   },
                   {
@@ -356,7 +350,7 @@
                       "delete"
                     ],
                     "groups": [
-                      "Admin"
+                      "event-control"
                     ]
                   },
                   {
@@ -459,7 +453,7 @@
                       "read"
                     ],
                     "groups": [
-                      "Admin"
+                      "event-control"
                     ]
                   },
                   {
@@ -795,11 +789,9 @@
                       "update"
                     ],
                     "groups": [
-                      "Admin",
-                      "Controller",
-                      "Loggist",
-                      "Steward",
-                      "Medical"
+                      "event-control",
+                      "fmic",
+                      "staff"
                     ]
                   },
                   {
@@ -890,8 +882,7 @@
                       "delete"
                     ],
                     "groups": [
-                      "Admin",
-                      "Controller"
+                      "event-control"
                     ]
                   },
                   {
@@ -1032,16 +1023,113 @@
                       "update"
                     ],
                     "groups": [
-                      "Admin",
-                      "Controller",
-                      "Loggist",
-                      "Steward"
+                      "event-control",
+                      "fmic"
                     ]
                   },
                   {
                     "allow": "private",
                     "operations": [
                       "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "Message": {
+          "name": "Message",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "channel": {
+              "name": "channel",
+              "isArray": false,
+              "type": {
+                "enum": "MessageChannel"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "text": {
+              "name": "text",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "senderId": {
+              "name": "senderId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "senderName": {
+              "name": "senderName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "senderRole": {
+              "name": "senderRole",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "Messages",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "read"
+                    ],
+                    "groups": [
+                      "event-control",
+                      "fmic",
+                      "staff"
                     ]
                   }
                 ]
@@ -1128,6 +1216,15 @@
           "values": [
             "Pending",
             "Done"
+          ]
+        },
+        "MessageChannel": {
+          "name": "MessageChannel",
+          "values": [
+            "OPS",
+            "SECURITY",
+            "STEWARDS",
+            "MEDICAL"
           ]
         }
       },
