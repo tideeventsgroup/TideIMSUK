@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { WifiOff, UploadCloud } from 'lucide-react';
 import { flushQueue, subscribeQueue, type QueuedIncident } from '../offline/queue';
 
 export function OfflineQueueBadge() {
@@ -22,22 +23,26 @@ export function OfflineQueueBadge() {
 
   return (
     <div
+      role="status"
       style={{
-        background: online ? '#d97706' : '#7c2d12',
-        color: '#fff',
-        padding: '0.4rem 1rem',
-        fontSize: '0.85rem',
+        background: online ? 'var(--sev-2)' : 'var(--sev-4-solid)',
+        color: '#ffffff',
+        padding: 'var(--space-2) var(--space-4)',
+        fontSize: 'var(--text-sm)',
+        fontWeight: 600,
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 'var(--space-2)',
       }}
     >
+      {online ? <UploadCloud size={16} /> : <WifiOff size={16} />}
       <span>
         {!online && 'Offline — writes are queued locally. '}
         {queue.length > 0 && `${queue.length} incident${queue.length > 1 ? 's' : ''} pending sync.`}
       </span>
       {online && queue.length > 0 && (
-        <button onClick={() => void flushQueue()} style={{ marginLeft: '0.5rem' }}>
+        <button onClick={() => void flushQueue()} className="secondary" style={{ background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.4)', color: '#fff', minHeight: 28, padding: '0 var(--space-3)' }}>
           Retry sync
         </button>
       )}

@@ -6,16 +6,19 @@ import '@aws-amplify/ui-react/styles.css';
 import './amplify-config';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Authenticator>
-      <AuthProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </AuthProvider>
-    </Authenticator>
+    <ThemeProvider>
+      <Authenticator>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </Authenticator>
+    </ThemeProvider>
   </StrictMode>,
 );

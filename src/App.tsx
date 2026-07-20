@@ -1,38 +1,74 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
+import { ThemeToggle } from './components/ThemeToggle';
 import { LiveBoard } from './pages/LiveBoard';
 import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
 import { Reports } from './pages/Reports';
-import { THEME } from './constants/theme';
+
+function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
+  const location = useLocation();
+  const active = location.pathname === to;
+  return (
+    <Link
+      to={to}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-2)',
+        padding: 'var(--space-2) var(--space-3)',
+        borderRadius: 'var(--radius-sm)',
+        color: active ? 'var(--color-accent-contrast)' : 'var(--color-text-secondary)',
+        background: active ? 'var(--color-accent)' : 'transparent',
+        textDecoration: 'none',
+        fontSize: 'var(--text-sm)',
+        fontWeight: 600,
+      }}
+    >
+      <Icon size={16} />
+      {label}
+    </Link>
+  );
+}
 
 export default function App() {
   const { signOut } = useAuthenticator((ctx) => [ctx.user]);
   const { user } = useAuth();
 
   return (
-    <div style={{ fontFamily: THEME.fontFamily, color: THEME.colorPrimary, minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh' }}>
       <OfflineQueueBadge />
       <header
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.75rem 1rem',
-          borderBottom: `2px solid ${THEME.colorPrimary}`,
+          padding: 'var(--space-3) var(--space-4)',
+          borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-surface)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          gap: 'var(--space-4)',
         }}
       >
-        <nav style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <strong>Tide IMS</strong>
-          <Link to="/">Live board</Link>
-          <Link to="/reports">Reports</Link>
-        </nav>
-        <div style={{ fontSize: '0.85rem' }}>
-          {user?.name} ({user?.role}){' '}
-          <button onClick={signOut} style={{ marginLeft: '0.5rem' }}>
-            Sign out
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)' }}>
+          <strong style={{ fontSize: 'var(--text-md)', letterSpacing: '-0.01em' }}>Tide IMS</strong>
+          <nav style={{ display: 'flex', gap: 'var(--space-1)' }}>
+            <NavLink to="/" label="Live board" icon={RadioIcon} />
+            <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
+          </nav>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+            {user?.name} <span className="mono">· {user?.role}</span>
+          </span>
+          <ThemeToggle />
+          <button type="button" className="icon-button" onClick={signOut} aria-label="Sign out" title="Sign out">
+            <LogOut size={18} />
           </button>
         </div>
       </header>

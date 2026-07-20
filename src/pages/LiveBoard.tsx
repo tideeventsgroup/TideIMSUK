@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Download, Plus } from 'lucide-react';
 import { useIncidents } from '../hooks/useIncidents';
 import { IncidentCard } from '../components/IncidentCard';
 import { EscalationBanner } from '../components/EscalationBanner';
@@ -21,24 +22,41 @@ export function LiveBoard() {
   return (
     <div>
       <EscalationBanner incidents={incidents} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
-        <h1 style={{ fontSize: '1.25rem', margin: 0 }}>Live incident log</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={() => exportIncidentsToCsv(incidents)}>Export CSV</button>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: 'var(--space-4)',
+          flexWrap: 'wrap',
+          gap: 'var(--space-3)',
+        }}
+      >
+        <h1 style={{ fontSize: 'var(--text-lg)' }}>Live incident log</h1>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <button type="button" className="secondary" onClick={() => exportIncidentsToCsv(incidents)}>
+            <Download size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+            Export CSV
+          </button>
           <Link to="/incidents/new">
-            <button>+ New incident</button>
+            <button type="button">
+              <Plus size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+              New incident
+            </button>
           </Link>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '1rem', padding: '0 1rem 1rem' }}>
-        <div style={{ flex: 1 }}>
-          {loading && <p>Loading…</p>}
-          {!loading && sorted.length === 0 && <p>No incidents logged yet.</p>}
+      <div style={{ display: 'flex', gap: 'var(--space-4)', padding: '0 var(--space-4) var(--space-4)', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading && <p style={{ color: 'var(--color-text-secondary)' }}>Loading…</p>}
+          {!loading && sorted.length === 0 && (
+            <p style={{ color: 'var(--color-text-secondary)' }}>No incidents logged yet.</p>
+          )}
           {sorted.map((incident) => (
             <IncidentCard key={incident.id} incident={incident} />
           ))}
         </div>
-        <div style={{ width: 220 }}>
+        <div style={{ width: 220, flexShrink: 0 }}>
           <RadioChannelPanel />
         </div>
       </div>

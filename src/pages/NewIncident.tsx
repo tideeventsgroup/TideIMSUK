@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin, AlertCircle } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -84,10 +85,38 @@ export function NewIncident() {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 480, margin: '0 auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <h1 style={{ fontSize: '1.25rem' }}>Log incident</h1>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        maxWidth: 480,
+        margin: '0 auto',
+        padding: 'var(--space-4)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-4)',
+      }}
+    >
+      <h1 style={{ fontSize: 'var(--text-lg)' }}>Log incident</h1>
 
-      {error && <div style={{ color: '#dc2626' }}>{error}</div>}
+      {error && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            color: 'var(--color-danger)',
+            background: 'var(--color-danger-bg)',
+            border: '1px solid var(--color-danger)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 'var(--space-3)',
+            fontSize: 'var(--text-sm)',
+          }}
+        >
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       <label>
         Category
@@ -115,18 +144,20 @@ export function NewIncident() {
       )}
 
       <div>
-        <button type="button" onClick={capture}>
+        <button type="button" className="secondary" onClick={capture}>
+          <MapPin size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
           Capture GPS
         </button>
-        {geoStatus === 'locating' && <span> locating…</span>}
-        {geoStatus === 'denied' && <span> location denied — select zone manually</span>}
-        {geoStatus === 'unavailable' && <span> GPS unavailable — select zone manually</span>}
-        {position && (
-          <span>
-            {' '}
-            {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
-          </span>
-        )}
+        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
+          {geoStatus === 'locating' && 'Locating…'}
+          {geoStatus === 'denied' && 'Location denied — select zone manually.'}
+          {geoStatus === 'unavailable' && 'GPS unavailable — select zone manually.'}
+          {position && (
+            <span className="mono">
+              {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+            </span>
+          )}
+        </div>
       </div>
 
       <ZonePicker value={zone} onChange={setZone} autoSuggested={suggestedZone} />
@@ -139,7 +170,7 @@ export function NewIncident() {
         </select>
       </label>
 
-      <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
         New incidents log at Level 1. Mark <strong>Major</strong> priority to flag urgency — only a
         Controller/Admin can then declare Level 2–4 from the incident page (OSSP Section 5.2: Tide
         declares incident level, not ground staff).
