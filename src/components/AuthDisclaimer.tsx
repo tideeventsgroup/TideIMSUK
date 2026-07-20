@@ -9,24 +9,9 @@ import { ShieldAlert } from 'lucide-react';
  */
 export function AuthDisclaimer() {
   return (
-    <div
-      role="note"
-      style={{
-        display: 'flex',
-        gap: 'var(--space-2)',
-        alignItems: 'flex-start',
-        border: '1px solid var(--color-border-strong)',
-        borderLeft: '3px solid var(--color-brand)',
-        borderRadius: 'var(--radius-sm)',
-        background: 'var(--color-surface)',
-        padding: 'var(--space-3)',
-        fontSize: 'var(--text-xs)',
-        color: 'var(--color-text-secondary)',
-        textAlign: 'left',
-      }}
-    >
-      <ShieldAlert size={16} style={{ flexShrink: 0, marginTop: 1, color: 'var(--color-brand)' }} aria-hidden="true" />
-      <p style={{ margin: 0 }}>
+    <div role="note" style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+      <ShieldAlert size={18} style={{ flexShrink: 0, marginTop: 1, color: 'var(--color-brand)' }} aria-hidden="true" />
+      <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
         <strong style={{ color: 'var(--color-text-primary)' }}>Authorised use only.</strong> This system is
         restricted to Tide Events Group Scotland control room staff and approved multi-agency partners. It
         holds live incident data, which may include personal and sensitive information, under Tide's

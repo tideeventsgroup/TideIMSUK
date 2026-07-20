@@ -1,6 +1,5 @@
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
-import { AuthDisclaimer } from './AuthDisclaimer';
 
 /** Custom header shown above every Authenticator screen (sign in, forgot password, forced password change). */
 export function AuthHeader() {
@@ -19,7 +18,6 @@ export function AuthHeader() {
       >
         Incident Management System — Event Control Room
       </p>
-      <AuthDisclaimer />
     </div>
   );
 }

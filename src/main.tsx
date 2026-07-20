@@ -10,12 +10,13 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { EventProvider } from './context/EventContext';
 import { AuthHeader } from './components/AuthHeader';
+import { AuthFooter } from './components/AuthFooter';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <Authenticator hideSignUp components={{ Header: AuthHeader }}>
+      <Authenticator hideSignUp components={{ Header: AuthHeader, Footer: AuthFooter }}>
         <AuthProvider>
           <EventProvider>
             <BrowserRouter>
