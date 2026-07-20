@@ -1,28 +1,689 @@
 {
-  "_placeholder": "This file is a stand-in so the app builds without a deployed backend. Run `npx ampx sandbox` (or `npx ampx generate outputs` against a deployed branch) to overwrite it with real values before connecting to AWS.",
   "auth": {
-    "user_pool_id": "eu-west-2_PLACEHOLDER",
+    "user_pool_id": "eu-west-2_pzdi7YTuQ",
     "aws_region": "eu-west-2",
-    "user_pool_client_id": "placeholder-client-id",
-    "identity_pool_id": "eu-west-2:placeholder-identity-pool",
-    "mfa_methods": ["TOTP"],
-    "standard_required_attributes": ["email"],
-    "username_attributes": ["email"],
-    "user_verification_types": ["email"],
-    "groups": ["Admin", "Controller", "Loggist", "Steward"],
+    "user_pool_client_id": "5t1upqeqns40b2arv7l29if47b",
+    "identity_pool_id": "eu-west-2:783b720c-5c1b-4099-b59e-7aedef7bea1f",
+    "mfa_methods": [
+      "TOTP"
+    ],
+    "standard_required_attributes": [
+      "email",
+      "name"
+    ],
+    "username_attributes": [
+      "email"
+    ],
+    "user_verification_types": [
+      "email"
+    ],
+    "groups": [
+      {
+        "Admin": {
+          "precedence": 0
+        }
+      },
+      {
+        "Controller": {
+          "precedence": 1
+        }
+      },
+      {
+        "Loggist": {
+          "precedence": 2
+        }
+      },
+      {
+        "Steward": {
+          "precedence": 3
+        }
+      }
+    ],
+    "mfa_configuration": "OPTIONAL",
     "password_policy": {
       "min_length": 8,
       "require_lowercase": true,
       "require_numbers": true,
       "require_symbols": true,
       "require_uppercase": true
-    }
+    },
+    "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://placeholder.appsync-api.eu-west-2.amazonaws.com/graphql",
+    "url": "https://xuqgms775zcerh7l3fpxtnkwvi.appsync-api.eu-west-2.amazonaws.com/graphql",
     "aws_region": "eu-west-2",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
-    "authorization_types": []
+    "authorization_types": [
+      "AWS_IAM"
+    ],
+    "model_introspection": {
+      "version": 1,
+      "models": {
+        "Event": {
+          "name": "Event",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "venue": {
+              "name": "venue",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "startDate": {
+              "name": "startDate",
+              "isArray": false,
+              "type": "AWSDate",
+              "isRequired": true,
+              "attributes": []
+            },
+            "endDate": {
+              "name": "endDate",
+              "isArray": false,
+              "type": "AWSDate",
+              "isRequired": true,
+              "attributes": []
+            },
+            "zones": {
+              "name": "zones",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "incidents": {
+              "name": "incidents",
+              "isArray": true,
+              "type": {
+                "model": "Incident"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "eventId"
+                ]
+              }
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "Events",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete"
+                    ],
+                    "groups": [
+                      "Admin"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "UserProfile": {
+          "name": "UserProfile",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "cognitoSub": {
+              "name": "cognitoSub",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "role": {
+              "name": "role",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "agency": {
+              "name": "agency",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "UserProfiles",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ],
+                    "groups": [
+                      "Admin"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  },
+                  {
+                    "provider": "userPools",
+                    "ownerField": "cognitoSub",
+                    "allow": "owner",
+                    "operations": [
+                      "read"
+                    ],
+                    "identityClaim": "cognito:username"
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "Incident": {
+          "name": "Incident",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "eventId": {
+              "name": "eventId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "event": {
+              "name": "event",
+              "isArray": false,
+              "type": {
+                "model": "Event"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "eventId"
+                ]
+              }
+            },
+            "timestamp": {
+              "name": "timestamp",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            },
+            "category": {
+              "name": "category",
+              "isArray": false,
+              "type": {
+                "enum": "Category"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "subcategory": {
+              "name": "subcategory",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "zone": {
+              "name": "zone",
+              "isArray": false,
+              "type": {
+                "enum": "Zone"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": {
+                "enum": "IncidentStatus"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "priority": {
+              "name": "priority",
+              "isArray": false,
+              "type": {
+                "enum": "Priority"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "escalationLevel": {
+              "name": "escalationLevel",
+              "isArray": false,
+              "type": {
+                "enum": "EscalationLevel"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "loggedByUserId": {
+              "name": "loggedByUserId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "loggedByName": {
+              "name": "loggedByName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "loggedByRole": {
+              "name": "loggedByRole",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "assignedAgency": {
+              "name": "assignedAgency",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "narrative": {
+              "name": "narrative",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "radioChannel": {
+              "name": "radioChannel",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "lat": {
+              "name": "lat",
+              "isArray": false,
+              "type": "Float",
+              "isRequired": false,
+              "attributes": []
+            },
+            "lng": {
+              "name": "lng",
+              "isArray": false,
+              "type": "Float",
+              "isRequired": false,
+              "attributes": []
+            },
+            "updates": {
+              "name": "updates",
+              "isArray": true,
+              "type": {
+                "nonModel": "IncidentUpdate"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "attachmentKeys": {
+              "name": "attachmentKeys",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "locked": {
+              "name": "locked",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "resolvedAt": {
+              "name": "resolvedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "Incidents",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "read",
+                      "update"
+                    ],
+                    "groups": [
+                      "Admin",
+                      "Controller",
+                      "Loggist",
+                      "Steward"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        }
+      },
+      "enums": {
+        "Category": {
+          "name": "Category",
+          "values": [
+            "CrowdMgmt",
+            "Medical",
+            "Welfare",
+            "Security",
+            "MissingPerson",
+            "FireEvac",
+            "Weather",
+            "Fireworks",
+            "VehicleTraffic",
+            "CTSuspicious",
+            "InfrastructureEquip",
+            "HarbourWaterSafety",
+            "Licensing",
+            "VolunteerStaff",
+            "LostProperty",
+            "Other"
+          ]
+        },
+        "Zone": {
+          "name": "Zone",
+          "values": [
+            "ZoneA",
+            "ZoneB",
+            "ZoneC",
+            "ZoneD",
+            "Harbourside",
+            "AccessEgress",
+            "WholeSite"
+          ]
+        },
+        "IncidentStatus": {
+          "name": "IncidentStatus",
+          "values": [
+            "Open",
+            "InProgress",
+            "Resolved",
+            "EscalatedMajor"
+          ]
+        },
+        "Priority": {
+          "name": "Priority",
+          "values": [
+            "Standard",
+            "Major"
+          ]
+        },
+        "EscalationLevel": {
+          "name": "EscalationLevel",
+          "values": [
+            "Level1",
+            "Level2",
+            "Level3",
+            "Level4"
+          ]
+        }
+      },
+      "nonModels": {
+        "IncidentUpdate": {
+          "name": "IncidentUpdate",
+          "fields": {
+            "timestamp": {
+              "name": "timestamp",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "userName": {
+              "name": "userName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "text": {
+              "name": "text",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "TriageAssistReturnType": {
+          "name": "TriageAssistReturnType",
+          "fields": {
+            "suggestedCategory": {
+              "name": "suggestedCategory",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedZone": {
+              "name": "suggestedZone",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "suggestedLevel": {
+              "name": "suggestedLevel",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "rationale": {
+              "name": "rationale",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "queries": {
+        "triageAssist": {
+          "name": "triageAssist",
+          "isArray": false,
+          "type": {
+            "nonModel": "TriageAssistReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "narrative": {
+              "name": "narrative",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "shiftSummary": {
+          "name": "shiftSummary",
+          "isArray": false,
+          "type": "String",
+          "isRequired": false,
+          "arguments": {
+            "summaryJson": {
+              "name": "summaryJson",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
+      }
+    }
   },
   "version": "1.4"
 }

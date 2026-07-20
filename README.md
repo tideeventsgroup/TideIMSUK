@@ -4,14 +4,46 @@ Incident Management System for Tide's event control room — a real-time,
 append-only incident log built as an installable PWA on AWS Amplify Gen 2.
 Domain target: `ims.tideeventsgroup.co.uk`.
 
-This repo currently contains the **Phase 0/1 scaffold**: the full data
-model, auth, live board, incident logging/detail views, CSV
-reporting/handover summary, PWA shell with an offline write queue, and a
-server-side AI triage-assist Lambda — all runnable locally against a real
-AWS sandbox once you connect an account. No AWS resources have been
-provisioned from this environment (no credentials here) — `amplify_outputs.json`
-is currently a placeholder so the app builds; see below to connect it to
-a real backend.
+## Live deployment
+
+**https://main.d1wx5jes1tad5t.amplifyapp.com/** — Amplify app `d1wx5jes1tad5t`,
+branch `main`, region `eu-west-2`, account `589389426290` (a shared agency
+AWS account — this app doesn't touch the account's other projects).
+Deployed manually (`ampx pipeline-deploy` + a manual Hosting upload, not
+git-connected — see "Redeploying" below), since connecting Amplify Hosting
+to GitHub requires a token that wasn't available at deploy time.
+
+`amplify_outputs.json` in this repo is the **real config for that live
+backend** (Cognito user pool, AppSync API — these are client-safe
+identifiers, not secrets, and already ship inside the built JS bundle).
+Running `npm run dev` locally connects to that same live backend unless you
+run your own `npx ampx sandbox`.
+
+**Known gaps on the live deployment:**
+- `GROQ_API_KEY` is a placeholder (`REPLACE_ME_SET_REAL_GROQ_KEY`) set just
+  so the backend would deploy — AI triage-assist/shift-summary will error
+  until the real key is set via AWS Console → Amplify → TideIMS → Secret
+  management, or `aws ssm put-parameter --name /amplify/shared/d1wx5jes1tad5t/GROQ_API_KEY --type SecureString --value <key> --overwrite`.
+- No custom domain — `tideeventsgroup.co.uk` has no Route 53 hosted zone in
+  this account yet.
+- MFA is optional, not enforced, on the deployed user pool.
+
+**Redeploying after further changes** (no GitHub auto-deploy is wired up):
+```bash
+export CI=true   # ampx pipeline-deploy refuses to run without this
+npx ampx pipeline-deploy --branch main --app-id d1wx5jes1tad5t   # backend
+npm run build
+cd dist && zip -r /tmp/dist.zip . && cd ..
+aws amplify create-deployment --app-id d1wx5jes1tad5t --branch-name main   # returns jobId + zipUploadUrl
+curl -X PUT -T /tmp/dist.zip "<zipUploadUrl>"
+aws amplify start-deployment --app-id d1wx5jes1tad5t --branch-name main --job-id <jobId>
+```
+
+## About this repo
+
+The full data model, auth, live board, incident logging/detail views, CSV/PDF
+reporting, PWA shell with an offline write queue, and server-side AI
+Lambdas are all implemented and now running against the live backend above.
 
 ## What's implemented
 
@@ -100,7 +132,7 @@ a real backend.
   for a PWA that's installed and cached, but worth lazy-loading
   (`import('../utils/pdf')`) if initial load time becomes a concern.
 
-## Connecting a real AWS account
+## Connecting your own AWS sandbox (optional, for local dev against your own backend instead of the shared live one)
 
 1. Configure AWS credentials for the account/region you want to deploy
    into (`eu-west-2` recommended per the build plan — UK data residency).
