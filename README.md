@@ -34,9 +34,24 @@ a real backend.
 - **PWA** — manifest, Workbox-generated service worker (`vite-plugin-pwa`),
   and a `localStorage`-backed offline write queue (`src/offline/queue.ts`)
   that queues incident creation while offline and flushes on reconnect.
-- **AI triage-assist** — `amplify/functions/triage-assist`: a Lambda that
-  calls Groq server-side only, wired through a custom AppSync query. The
-  key never reaches the browser. Not yet wired into the incident form UI.
+- **AI, server-side only** (Build Plan Section 11) — two Lambdas, both
+  called via custom AppSync queries so the Groq key never reaches the
+  browser:
+  - `triage-assist` — a "Suggest with AI" button on the New Incident form
+    (`TriageSuggest.tsx`) proposes category/zone/level from the narrative.
+    It's a suggestion card the Loggist applies or dismisses; nothing is
+    ever auto-filled or auto-submitted.
+  - `shift-summary` — a "Generate" button on Reports (`AiSummaryPanel.tsx`)
+    drafts a plain-English handover paragraph from the structured incident
+    counts. Labeled as a draft to review, not a decision — matches the
+    OSSP boundary that AI drafts/flags and a human with command authority
+    decides.
+- **Event setup** — `/setup` (Admin-only): create/edit Events and pick
+  which one is "active" (`EventContext.tsx`, persisted to `localStorage`
+  per device). Replaces having to hand-write a GraphQL mutation in the
+  AppSync console just to get the app usable. Every other page reads the
+  active event and shows a plain "no event configured" state — with a
+  link to Setup for Admins — until one exists.
 - **Design system** — token-based light "office" and dark "ops console"
   themes (`src/styles/tokens.css`), a theme toggle that persists to
   `localStorage`, and a `SeverityBadge` that's always icon+text+color (never
@@ -71,9 +86,10 @@ a real backend.
 - **Photo attachments (S3), push notifications, and the site-map view**
   (Phase 4) are not built yet — `attachmentKeys` exists on the model as a
   landing point.
-- **Triage-assist isn't called from the incident form yet** — the Lambda
-  and resolver exist and typecheck; wiring a "suggest" button into
-  `NewIncident.tsx` is the next step.
+- **User management (Cognito group assignment) has no UI** — adding
+  someone to `Admin`/`Controller`/`Loggist`/`Steward` is still a Cognito
+  console/CLI task; it needs an admin-privileged Lambda (`AdminAddUserToGroup`)
+  to expose safely through AppSync, which isn't built yet.
 - **No automated tests.**
 
 ## Connecting a real AWS account
@@ -86,18 +102,17 @@ a real backend.
    AppSync, DynamoDB) and overwrites the placeholder `amplify_outputs.json`
    with real values. Leave it running while you develop; it hot-reloads
    backend changes.
-4. Set the Groq key for the triage-assist function:
-   `npx ampx sandbox secret set GROQ_API_KEY` (paste the key when prompted —
-   rotate the key first if it's ever touched a `.env` file or client code).
+4. Set the Groq key — shared by both AI Lambdas (`triage-assist` and
+   `shift-summary`): `npx ampx sandbox secret set GROQ_API_KEY` (paste the
+   key when prompted — rotate the key first if it's ever touched a `.env`
+   file or client code).
 5. `npm run dev` — the frontend picks up `amplify_outputs.json`
    automatically.
 6. Create your first users in the Cognito console (or via `ampx sandbox`
    output) and add them to the `Admin`/`Controller`/`Loggist`/`Steward`
    groups as appropriate.
-7. Create at least one `Event` record (via a GraphQL mutation in the
-   AppSync console, or a small seed script) — the live board reads
-   `VITE_EVENT_ID` (defaults to `default-event`); set that env var to
-   match, or create the Event with `id: "default-event"`.
+7. Sign in as an Admin and go to **Setup** (`/setup`) to create your first
+   Event — no more manual GraphQL mutations needed.
 
 ## Deploying to `ims.tideeventsgroup.co.uk`
 
@@ -107,7 +122,8 @@ a real backend.
    per branch.
 3. Set the `GROQ_API_KEY` secret for the deployed branch environment
    (Amplify Console → Secrets, or `ampx pipeline-deploy` with secrets
-   configured) — not as a plaintext env var.
+   configured) — not as a plaintext env var. Both `triage-assist` and
+   `shift-summary` read it.
 4. In Route 53, add `ims.tideeventsgroup.co.uk` as a custom domain against
    the Amplify app; Amplify provisions the ACM certificate.
 5. Confirm MFA is enforced for anyone added to `Controller`/`Admin` groups
@@ -130,20 +146,23 @@ npm run lint                # oxlint
 ```
 amplify/
   auth/resource.ts        Cognito user pool + groups
-  data/resource.ts        GraphQL schema (Event, UserProfile, Incident)
-  functions/triage-assist/  Groq-backed AI triage Lambda (server-side only)
+  data/resource.ts        GraphQL schema (Event, UserProfile, Incident, AI queries)
+  functions/triage-assist/  Groq-backed suggestion Lambda (server-side only)
+  functions/shift-summary/  Groq-backed handover-draft Lambda (server-side only)
   backend.ts               Amplify Gen 2 entry point
 src/
   styles/tokens.css        design tokens — light/dark theme, severity scale, brand orange
   constants/               taxonomy, zones, escalation levels
   context/AuthContext.tsx  role/group resolution from the Cognito session
   context/ThemeContext.tsx light/dark toggle, persisted to localStorage
+  context/EventContext.tsx active-event selection, persisted to localStorage
   data/client.ts           typed AppSync client
   hooks/                   useIncidents (subscriptions), useGeolocation
   offline/queue.ts         offline write queue
-  pages/                   LiveBoard, NewIncident, IncidentDetail, Reports
+  pages/                   LiveBoard, NewIncident, IncidentDetail, Reports, EventSetup
   components/               IncidentCard, EscalationBanner, SeverityBadge,
-                             IncidentFilters, WindConditionsPanel, Logo, etc.
+                             IncidentFilters, WindConditionsPanel, TriageSuggest,
+                             AiSummaryPanel, Logo, etc.
 public/brand/              real Tide logo exports (black-text / white-text)
 public/icons/, favicon-*.png  generated from the logo's shield mark
 ```

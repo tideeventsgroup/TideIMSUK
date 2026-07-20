@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, AlertCircle } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
+import { useEvent } from '../context/EventContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { lookupZone } from '../utils/zoneLookup';
 import { CATEGORIES, type CategoryKey } from '../constants/taxonomy';
@@ -10,11 +11,11 @@ import { ZonePicker } from '../components/ZonePicker';
 import type { ZoneKey } from '../constants/zones';
 import type { Priority } from '../types/incident';
 import { enqueueIncident } from '../offline/queue';
-
-const DEFAULT_EVENT_ID = import.meta.env.VITE_EVENT_ID ?? 'default-event';
+import { TriageSuggest } from '../components/TriageSuggest';
 
 export function NewIncident() {
   const { user } = useAuth();
+  const { activeEvent } = useEvent();
   const navigate = useNavigate();
   const { position, status: geoStatus, capture } = useGeolocation();
 
@@ -30,6 +31,14 @@ export function NewIncident() {
   const suggestedZone = position ? lookupZone(position.lng, position.lat) : null;
   const categoryDef = CATEGORIES.find((c) => c.key === category);
 
+  if (!activeEvent) {
+    return (
+      <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+        No event configured yet — an Admin needs to set one up before incidents can be logged.
+      </p>
+    );
+  }
+
   const handleCategoryChange = (key: CategoryKey) => {
     setCategory(key);
     setSubcategory('');
@@ -39,7 +48,7 @@ export function NewIncident() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !activeEvent) return;
 
     setSubmitting(true);
     setError(null);
@@ -47,7 +56,7 @@ export function NewIncident() {
     // Client-set timestamp: required for offline-first logging, since a
     // device may write while disconnected and sync later (Section 2/4).
     const payload = {
-      eventId: DEFAULT_EVENT_ID,
+      eventId: activeEvent.id,
       timestamp: new Date().toISOString(),
       category,
       subcategory: subcategory || undefined,
@@ -191,6 +200,14 @@ export function NewIncident() {
         Narrative
         <textarea required rows={4} value={narrative} onChange={(e) => setNarrative(e.target.value)} />
       </label>
+
+      <TriageSuggest
+        narrative={narrative}
+        onApply={(fields) => {
+          if (fields.category) handleCategoryChange(fields.category);
+          if (fields.zone) setZone(fields.zone);
+        }}
+      />
 
       <button type="submit" disabled={submitting || !narrative}>
         {submitting ? 'Logging…' : 'Log incident'}

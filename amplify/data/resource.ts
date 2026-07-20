@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { triageAssist } from '../functions/triage-assist/resource';
+import { shiftSummary } from '../functions/shift-summary/resource';
 
 /**
  * Data model per Build Plan Section 3.
@@ -137,6 +138,15 @@ const schema = a.schema({
     )
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(triageAssist)),
+
+  // Server-side only: drafts the shift handover summary from structured
+  // incident counts (Build Plan Section 11). Never declares/escalates/resolves.
+  shiftSummary: a
+    .query()
+    .arguments({ summaryJson: a.string().required() })
+    .returns(a.string())
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(shiftSummary)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

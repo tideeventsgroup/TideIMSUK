@@ -7,6 +7,7 @@ import './amplify-config';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { EventProvider } from './context/EventContext';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <Authenticator>
         <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <EventProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </EventProvider>
         </AuthProvider>
       </Authenticator>
     </ThemeProvider>

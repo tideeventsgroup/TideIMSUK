@@ -1,14 +1,16 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2 } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
+import { RoleGate } from './components/RoleGate';
 import { LiveBoard } from './pages/LiveBoard';
 import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
 import { Reports } from './pages/Reports';
+import { EventSetup } from './pages/EventSetup';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -64,6 +66,9 @@ export default function App() {
           <nav style={{ display: 'flex', gap: 'var(--space-1)' }}>
             <NavLink to="/" label="Live board" icon={RadioIcon} />
             <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
+            <RoleGate allow={['Admin']}>
+              <NavLink to="/setup" label="Setup" icon={Settings} />
+            </RoleGate>
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
@@ -82,6 +87,7 @@ export default function App() {
         <Route path="/incidents/new" element={<NewIncident />} />
         <Route path="/incidents/:id" element={<IncidentDetail />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/setup" element={<EventSetup />} />
       </Routes>
     </div>
   );

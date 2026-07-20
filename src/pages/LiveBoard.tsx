@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, Settings } from 'lucide-react';
 import { useIncidents } from '../hooks/useIncidents';
+import { useAuth } from '../context/AuthContext';
+import { useEvent } from '../context/EventContext';
 import { IncidentCard } from '../components/IncidentCard';
 import { EscalationBanner } from '../components/EscalationBanner';
 import { RadioChannelPanel } from '../components/RadioChannelPanel';
@@ -10,12 +12,12 @@ import { StatTile } from '../components/StatTile';
 import { IncidentFilters, EMPTY_FILTERS, applyIncidentFilters, type IncidentFilterState } from '../components/IncidentFilters';
 import { exportIncidentsToCsv } from '../utils/exportCsv';
 
-const DEFAULT_EVENT_ID = import.meta.env.VITE_EVENT_ID ?? 'default-event';
-
 const LEVEL_ORDER: Record<string, number> = { Level4: 0, Level3: 1, Level2: 2, Level1: 3 };
 
 export function LiveBoard() {
-  const { incidents, loading } = useIncidents(DEFAULT_EVENT_ID);
+  const { user } = useAuth();
+  const { activeEvent, loading: eventLoading } = useEvent();
+  const { incidents, loading } = useIncidents(activeEvent?.id ?? null);
   const [filters, setFilters] = useState<IncidentFilterState>(EMPTY_FILTERS);
 
   const filtered = useMemo(() => applyIncidentFilters(incidents, filters), [incidents, filters]);
@@ -29,6 +31,27 @@ export function LiveBoard() {
   const openCount = incidents.filter((i) => i.status === 'Open').length;
   const inProgressCount = incidents.filter((i) => i.status === 'InProgress').length;
   const criticalCount = incidents.filter((i) => (i.escalationLevel === 'Level3' || i.escalationLevel === 'Level4') && i.status !== 'Resolved').length;
+
+  if (!eventLoading && !activeEvent) {
+    return (
+      <div style={{ maxWidth: 480, margin: '4rem auto', padding: 'var(--space-4)', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 'var(--text-lg)' }}>No event configured</h1>
+        <p style={{ color: 'var(--color-text-secondary)' }}>
+          {user?.role === 'Admin'
+            ? 'Set up an event before logging incidents.'
+            : 'An Admin needs to set up an event before incidents can be logged.'}
+        </p>
+        {user?.role === 'Admin' && (
+          <Link to="/setup">
+            <button type="button">
+              <Settings size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+              Go to Setup
+            </button>
+          </Link>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>

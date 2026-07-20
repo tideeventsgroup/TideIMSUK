@@ -1,12 +1,12 @@
 import { Download } from 'lucide-react';
 import { useIncidents } from '../hooks/useIncidents';
+import { useEvent } from '../context/EventContext';
 import { buildHandoverSummary, exportIncidentsToCsv } from '../utils/exportCsv';
 import { categoryLabel } from '../constants/taxonomy';
 import { zoneLabel } from '../constants/zones';
 import { IncidentCard } from '../components/IncidentCard';
 import { StatTile } from '../components/StatTile';
-
-const DEFAULT_EVENT_ID = import.meta.env.VITE_EVENT_ID ?? 'default-event';
+import { AiSummaryPanel } from '../components/AiSummaryPanel';
 
 function BreakdownList({ title, entries, labeler }: { title: string; entries: [string, number][]; labeler: (k: string) => string }) {
   const max = Math.max(1, ...entries.map(([, v]) => v));
@@ -39,9 +39,13 @@ function BreakdownList({ title, entries, labeler }: { title: string; entries: [s
 }
 
 export function Reports() {
-  const { incidents, loading } = useIncidents(DEFAULT_EVENT_ID);
+  const { activeEvent } = useEvent();
+  const { incidents, loading } = useIncidents(activeEvent?.id ?? null);
   const summary = buildHandoverSummary(incidents);
 
+  if (!activeEvent) {
+    return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>No event configured yet.</p>;
+  }
   if (loading) return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>Loading…</p>;
 
   return (
@@ -62,6 +66,8 @@ export function Reports() {
 
       <BreakdownList title="By category" entries={Object.entries(summary.byCategory)} labeler={categoryLabel} />
       <BreakdownList title="By zone" entries={Object.entries(summary.byZone)} labeler={zoneLabel} />
+
+      <AiSummaryPanel summary={summary} totalLogged={incidents.length} />
 
       <h2 style={{ fontSize: 'var(--text-base)', marginTop: 'var(--space-6)' }}>Level 3/4 incidents</h2>
       {summary.criticalOrMajor.length === 0 && <p style={{ color: 'var(--color-text-tertiary)' }}>None.</p>}
