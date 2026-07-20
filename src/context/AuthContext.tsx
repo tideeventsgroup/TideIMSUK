@@ -13,7 +13,7 @@ interface AuthState {
   assignedZone: ZoneKey | null;
 }
 
-const ROLE_PRIORITY: Role[] = ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'];
+const ROLE_PRIORITY: Role[] = ['event-control', 'fmic', 'staff', 'view-only'];
 
 const AuthCtx = createContext<{ user: AuthState | null; loading: boolean; refresh: () => Promise<void> }>({
   user: null,
@@ -22,7 +22,7 @@ const AuthCtx = createContext<{ user: AuthState | null; loading: boolean; refres
 });
 
 function primaryRole(groups: string[]): Role {
-  return ROLE_PRIORITY.find((r) => groups.includes(r)) ?? 'Steward';
+  return ROLE_PRIORITY.find((r) => groups.includes(r)) ?? 'view-only';
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

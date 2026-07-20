@@ -48,7 +48,7 @@ export function IncidentDetail() {
 
   if (!incident || !user) return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>Loading…</p>;
 
-  const isCommand = user.role === 'Controller' || user.role === 'Admin';
+  const isCommand = user.role === 'event-control' || user.role === 'fmic';
   // Client-side enforcement of the Level 4 lock (see amplify/data/resource.ts note) —
   // pending a server-side custom resolver for full enforcement.
   const editLocked = incident.locked && !isCommand;
@@ -170,10 +170,12 @@ export function IncidentDetail() {
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         <SeverityBadge level={incident.escalationLevel} />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-          <button type="button" className="secondary" onClick={openJobForm}>
-            <ListChecks size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-            Convert to job
-          </button>
+          {isCommand && (
+            <button type="button" className="secondary" onClick={openJobForm}>
+              <ListChecks size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+              Convert to job
+            </button>
+          )}
           <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
             <FileText size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
             {pdfBusy ? 'Preparing…' : 'Download PDF'}
@@ -261,7 +263,7 @@ export function IncidentDetail() {
 
       {incident.locked && (
         <p style={{ color: 'var(--sev-4)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-          <Lock size={16} /> Locked to Controller/Admin — live command in effect.
+          <Lock size={16} /> Locked to Event Control — live command in effect.
         </p>
       )}
 
@@ -341,7 +343,7 @@ export function IncidentDetail() {
         title={`Declare ${pendingLevel ? `Level ${pendingLevel.replace('Level', '')}` : ''}?`}
         description={
           pendingLevel === 'Level4'
-            ? 'This declares a Critical incident: 999/emergency services assume scene command, a push alert and banner go to every device, and the incident locks to Controller/Admin only. Confirm this is an authorised command decision.'
+            ? 'This declares a Critical incident: 999/emergency services assume scene command, a push alert and banner go to every device, and the incident locks to Event Control only. Confirm this is an authorised command decision.'
             : 'This declares a Major incident: FMIC commands ground response, agencies are notified, and the incident is pinned with a push alert to every device.'
         }
         confirmLabel={`Declare ${pendingLevel ? `Level ${pendingLevel.replace('Level', '')}` : ''}`}

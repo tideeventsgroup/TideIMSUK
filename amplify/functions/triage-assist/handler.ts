@@ -29,7 +29,7 @@ ${CATEGORY_LINES}
 Zones: ${ZONES.map((z) => z.key).join(', ')}
 Priority: Standard, Major
 Radio channels: ${Object.entries(RADIO_CHANNELS).map(([n, label]) => `${n}=${label}`).join('; ')}
-Escalation levels: Level1 (Minor), Level2 (Significant), Level3 (Major, Controller/Admin only), Level4 (Critical, Controller/Admin only)
+Escalation levels: Level1 (Minor), Level2 (Significant), Level3 (Major, Event Control only), Level4 (Critical, Event Control only)
 ${riskContext ? `\nActive event's risk register (ref: hazard) — suggest refs only when the narrative clearly matches a listed hazard:\n${riskContext}` : ''}
 
 You are a suggestion tool only. You never declare an incident level and never

@@ -44,6 +44,14 @@ export function Checklists() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEvent?.id]);
 
+  if (user && user.role !== 'event-control' && user.role !== 'fmic') {
+    return (
+      <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+        Only Event Control/FMIC can access checklists.
+      </p>
+    );
+  }
+
   if (!activeEvent) {
     return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>No event configured yet.</p>;
   }
@@ -88,7 +96,7 @@ export function Checklists() {
         <h1 style={{ fontSize: 'var(--text-lg)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <ListChecks size={20} /> Checklists
         </h1>
-        {(user?.role === 'Admin' || user?.role === 'Controller') && (
+        {user?.role === 'event-control' && (
           <button type="button" className="secondary" onClick={runSeed} disabled={seeding}>
             {seeding ? 'Seeding…' : 'Seed default templates'}
           </button>

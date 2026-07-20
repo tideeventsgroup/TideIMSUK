@@ -39,7 +39,7 @@ const MIN_LENGTH = 15;
  * without a "please wait" step in between. Nothing here ever blocks
  * submission — suggestions are tap-to-confirm chips the Loggist applies
  * individually, not a form the AI fills and locks. Never touches
- * escalation level (only Controller/Admin declare that, from the incident
+ * escalation level (only Event Control/FMIC declare that, from the incident
  * page after creation) and never rewrites the narrative without an
  * explicit tap.
  */
@@ -226,7 +226,7 @@ export function TriageSuggest({
 
           {suggestion!.level && (
             <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>
-              Reads like <strong>{escalationDef(suggestion!.level)?.name}</strong> — Controller/Admin declares the actual level after review.
+              Reads like <strong>{escalationDef(suggestion!.level)?.name}</strong> — Event Control/FMIC declares the actual level after review.
             </p>
           )}
           {suggestion!.rationale && (

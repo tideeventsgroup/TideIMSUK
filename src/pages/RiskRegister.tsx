@@ -46,10 +46,10 @@ export function RiskRegister() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEvent?.id]);
 
-  if (user && user.role !== 'Admin' && user.role !== 'Controller') {
+  if (user && user.role !== 'event-control') {
     return (
       <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
-        Only a Controller/Admin can access the risk register.
+        Only Event Control can access the risk register.
       </p>
     );
   }

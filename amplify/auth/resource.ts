@@ -2,21 +2,26 @@ import { defineAuth } from '@aws-amplify/backend';
 
 /**
  * Cognito user pool for Tide IMS.
- * Groups mirror the OSSP command structure (Section 5.2 / 8):
- * only Controller/Admin may declare Level 3/4 incidents — enforced again
- * in data/resource.ts authorization rules, not just in the UI.
- *
- * Medical is a discipline-scoped viewer role (WeTrack-inspired role-scoped
- * views): sees only category:Medical incidents, client-side filtered —
- * see src/context/AuthContext.tsx / LiveBoard.tsx for the caveat that this
- * is a view restriction, not row-level server-side security (same
- * limitation already flagged for the Level 4 lock).
+ * Four-role model, replacing the earlier five-role (Admin/Controller/
+ * Loggist/Steward/Medical) scheme:
+ *   - event-control: full admin (Kyle / Operational Safety Commander) —
+ *     user management, risk register CRUD, checklist template management,
+ *     event setup, declares Level 3/4 (OSSP Section 5.2).
+ *   - fmic: all operational features except admin — declares Level 1/2
+ *     only, Level 3/4 stays with event-control.
+ *   - staff: ground roles (security/stewards/medical/bar/volunteers) —
+ *     scoped to their own zone's incidents + messaging only.
+ *   - view-only: read-only (Event Director/SDT/external partners) — no
+ *     create/edit, no messaging.
+ * Enforced server-side in data/resource.ts authorization rules, not just
+ * hidden in the UI — a lost/borrowed staff device calling a Level 4
+ * declare gets rejected by the API itself.
  */
 export const auth = defineAuth({
   loginWith: {
     email: true,
   },
-  groups: ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'],
+  groups: ['event-control', 'fmic', 'staff', 'view-only'],
   multifactor: {
     mode: 'OPTIONAL',
     totp: true,

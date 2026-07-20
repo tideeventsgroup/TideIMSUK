@@ -93,7 +93,7 @@ export function NewIncident() {
   if (!activeEvent) {
     return (
       <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
-        No event configured yet — an Admin needs to set one up before incidents can be logged.
+        No event configured yet — Event Control needs to set one up before incidents can be logged.
       </p>
     );
   }
@@ -384,8 +384,8 @@ export function NewIncident() {
       </label>
 
       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
-        New incidents log at Level 1. Mark <strong>Major</strong> priority to flag urgency — only a
-        Controller/Admin can then declare Level 2–4 from the incident page (OSSP Section 5.2: Tide
+        New incidents log at Level 1. Mark <strong>Major</strong> priority to flag urgency — only
+        Event Control/FMIC can then declare Level 2–4 from the incident page (OSSP Section 5.2: Tide
         declares incident level, not ground staff).
       </p>
 

@@ -15,28 +15,14 @@ import { exportIncidentLogToPdf } from '../utils/pdf';
 
 const LEVEL_ORDER: Record<string, number> = { Level4: 0, Level3: 1, Level2: 2, Level1: 3 };
 
+/** Live Board is event-control/fmic/view-only only — Staff gets StaffHome (own-zone list, no map/reports). */
 export function LiveBoard() {
   const { user } = useAuth();
   const { activeEvent, loading: eventLoading } = useEvent();
-  const { incidents: allIncidents, loading } = useIncidents(activeEvent?.id ?? null);
+  const { incidents, loading } = useIncidents(activeEvent?.id ?? null);
   const [filters, setFilters] = useState<IncidentFilterState>(EMPTY_FILTERS);
   const [pdfBusy, setPdfBusy] = useState(false);
-
-  // Role-scoped visibility — Steward sees only their assigned zone, Medical
-  // sees only Medical-category incidents, Controller/Admin/Loggist see all.
-  // Client-side only: AppSync authorization doesn't yet enforce this row-level
-  // restriction, so it's a UX scope, not a security boundary.
-  const incidents = useMemo(() => {
-    if (!user) return allIncidents;
-    if (user.role === 'Steward') {
-      if (!user.assignedZone) return allIncidents;
-      return allIncidents.filter((i) => i.zone === user.assignedZone || i.zone === 'WholeSite');
-    }
-    if (user.role === 'Medical') {
-      return allIncidents.filter((i) => i.category === 'Medical');
-    }
-    return allIncidents;
-  }, [allIncidents, user]);
+  const readOnly = user?.role === 'view-only';
 
   const filtered = useMemo(() => applyIncidentFilters(incidents, filters), [incidents, filters]);
 
@@ -55,11 +41,11 @@ export function LiveBoard() {
       <div style={{ maxWidth: 480, margin: '4rem auto', padding: 'var(--space-4)', textAlign: 'center' }}>
         <h1 style={{ fontSize: 'var(--text-lg)' }}>No event configured</h1>
         <p style={{ color: 'var(--color-text-secondary)' }}>
-          {user?.role === 'Admin'
+          {user?.role === 'event-control'
             ? 'Set up an event before logging incidents.'
-            : 'An Admin needs to set up an event before incidents can be logged.'}
+            : 'Event Control needs to set up an event before incidents can be logged.'}
         </p>
-        {user?.role === 'Admin' && (
+        {user?.role === 'event-control' && (
           <Link to="/setup">
             <button type="button">
               <Settings size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
@@ -95,22 +81,24 @@ export function LiveBoard() {
         }}
       >
         <h1 style={{ fontSize: 'var(--text-lg)' }}>Live incident log</h1>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button type="button" className="secondary" onClick={() => exportIncidentsToCsv(incidents)}>
-            <Download size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
-            Export CSV
-          </button>
-          <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
-            <FileText size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
-            {pdfBusy ? 'Preparing…' : 'Export PDF'}
-          </button>
-          <Link to="/incidents/new">
-            <button type="button">
-              <Plus size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
-              New incident
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button type="button" className="secondary" onClick={() => exportIncidentsToCsv(incidents)}>
+              <Download size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+              Export CSV
             </button>
-          </Link>
-        </div>
+            <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
+              <FileText size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+              {pdfBusy ? 'Preparing…' : 'Export PDF'}
+            </button>
+            <Link to="/incidents/new">
+              <button type="button">
+                <Plus size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+                New incident
+              </button>
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="stat-row" style={{ padding: '0 var(--space-4) var(--space-4)' }}>

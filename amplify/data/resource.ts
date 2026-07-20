@@ -10,7 +10,7 @@ import { sendEscalationPush } from '../functions/send-escalation-push/resource';
  * never rewritten in place, and `narrative`/`loggedBy`/`timestamp` are
  * immutable once set. This is what makes the log audit-defensible — see
  * Section 5/8: Tide declares incident level, ground staff do not, so
- * escalationLevel is field-level restricted to Controller/Admin.
+ * escalationLevel is field-level restricted to Event Control/FMIC.
  */
 
 const IncidentUpdate = a.customType({
@@ -78,7 +78,7 @@ const schema = a.schema({
       linkedCategories: a.string().array(),
     })
     .authorization((allow) => [
-      allow.groups(['Admin', 'Controller']).to(['create', 'update', 'delete']),
+      allow.groups(['event-control']).to(['create', 'update', 'delete']),
       allow.authenticated().to(['read']),
     ]),
 
@@ -96,7 +96,7 @@ const schema = a.schema({
       checklistInstances: a.hasMany('ChecklistInstance', 'eventId'),
     })
     .authorization((allow) => [
-      allow.groups(['Admin']).to(['create', 'update', 'delete']),
+      allow.groups(['event-control']).to(['create', 'update', 'delete']),
       allow.authenticated().to(['read']),
     ]),
 
@@ -106,14 +106,14 @@ const schema = a.schema({
       name: a.string().required(),
       role: a.string().required(),
       agency: a.string(),
-      // Steward role-scoped views (WeTrack-inspired): a Steward only sees
+      // Staff role-scoped views (WeTrack-inspired): a Staff device only sees
       // incidents in their assigned zone. Self-service (set via a control
       // in the header), client-side filter only — see LiveBoard.tsx
       // caveat, same limitation as the Level 4 lock.
       assignedZone: a.string(),
     })
     .authorization((allow) => [
-      allow.groups(['Admin']).to(['create', 'update', 'delete', 'read']),
+      allow.groups(['event-control']).to(['create', 'update', 'delete', 'read']),
       allow.authenticated().to(['read']),
       allow.ownerDefinedIn('cognitoSub').to(['read', 'create', 'update']),
     ]),
@@ -141,25 +141,28 @@ const schema = a.schema({
       // (status: 'Open', priority: 'Standard', escalationLevel: 'Level1' on create).
       status: a.ref('IncidentStatus').required(),
       priority: a.ref('Priority').required(),
-      // Only Tide declares incident level (OSSP 5.2) — Controller/Admin only
-      // may *change* it after creation. Field-level auth on a required field
-      // overrides the model-level default for that field entirely (not just
-      // adds to it), so create/read must both be re-granted explicitly
-      // alongside the update restriction — every role that can create an
-      // incident sets escalationLevel: 'Level1' as part of that create call.
+      // Only Tide declares incident level (OSSP 5.2) — event-control any
+      // level, fmic Level 1-2 only (client-enforced via canDeclareLevel,
+      // same limitation as the Level 4 lock below — field auth can't
+      // restrict by enum *value*, only by field name), staff not at all
+      // after creation. Field-level auth on a required field overrides the
+      // model-level default for that field entirely (not just adds to it),
+      // so create/read must both be re-granted explicitly alongside the
+      // update restriction — every role that can create an incident sets
+      // escalationLevel: 'Level1' as part of that create call.
       // IMPORTANT: a group must appear in exactly one rule per field here —
-      // listing Controller/Admin in both a broad create/read rule and a
-      // separate update-only rule (rather than one combined rule) makes
-      // Amplify's per-field auth codegen drop their create grant entirely
-      // (confirmed live: Admin got "Unauthorized on [escalationLevel,
-      // locked]" on create while Loggist/Steward/Medical, who only ever
-      // appear in one rule, worked fine).
+      // listing a group in both a broad create/read rule and a separate
+      // update-only rule (rather than one combined rule) makes Amplify's
+      // per-field auth codegen drop that group's create grant entirely
+      // (confirmed live: a group got "Unauthorized on [escalationLevel,
+      // locked]" on create while groups that only ever appear in one rule
+      // worked fine).
       escalationLevel: a
         .ref('EscalationLevel')
         .required()
         .authorization((allow) => [
-          allow.groups(['Controller', 'Admin']).to(['create', 'read', 'update']),
-          allow.groups(['Loggist', 'Steward', 'Medical']).to(['create', 'read']),
+          allow.groups(['event-control', 'fmic']).to(['create', 'read', 'update']),
+          allow.groups(['staff']).to(['create', 'read']),
           allow.authenticated().to(['read']),
         ]),
       loggedByUserId: a.string().required(),
@@ -174,29 +177,30 @@ const schema = a.schema({
       attachmentKeys: a.string().array(),
       // Risk register tagging (WeTrack-inspired) — optional, any role may tag.
       linkedRiskIds: a.string().array(),
-      // Level 4 locks the incident to Controller/Admin only (OSSP command handover).
+      // Level 4 locks the incident to event-control only (OSSP command handover,
+      // event-control is the only role that ever declares Level 4).
       // NOTE: this only field-restricts writes to `locked` itself. Enforcing the lock
       // across every other field (status, updates[], etc.) needs a custom resolver —
       // the frontend enforces it client-side for now (see IncidentDetail.tsx); a
       // Lambda authorizer/resolver is the follow-up for full server-side enforcement.
       // Every role that can create an incident sets `locked: false` on create
       // (NewIncident.tsx), so create/read need to be granted broadly too —
-      // only the later *change* to true is Controller/Admin-only. See the
+      // only the later *change* to true is event-control-only. See the
       // note on escalationLevel above re: one rule per group per field.
       locked: a
         .boolean()
         .default(false)
         .authorization((allow) => [
-          allow.groups(['Controller', 'Admin']).to(['create', 'read', 'update']),
-          allow.groups(['Loggist', 'Steward', 'Medical']).to(['create', 'read']),
+          allow.groups(['event-control']).to(['create', 'read', 'update']),
+          allow.groups(['fmic', 'staff']).to(['create', 'read']),
           allow.authenticated().to(['read']),
         ]),
       resolvedAt: a.datetime(),
     })
     .authorization((allow) => [
-      // escalationLevel and locked are field-level restricted to Controller/Admin above;
+      // escalationLevel and locked are field-level restricted above;
       // all roles may otherwise create/read/update (append updates[], change status).
-      allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read', 'update']),
+      allow.groups(['event-control', 'fmic', 'staff']).to(['create', 'read', 'update']),
       allow.authenticated().to(['read']),
     ]),
 
@@ -238,7 +242,7 @@ const schema = a.schema({
       items: a.ref('ChecklistTemplateItem').array().required(),
     })
     .authorization((allow) => [
-      allow.groups(['Admin', 'Controller']).to(['create', 'update', 'delete']),
+      allow.groups(['event-control']).to(['create', 'update', 'delete']),
       allow.authenticated().to(['read']),
     ]),
 
@@ -257,8 +261,10 @@ const schema = a.schema({
       sourceIncidentId: a.id(),
       items: a.ref('ChecklistInstanceItem').array().required(),
     })
+    // Staff explicitly excluded — checklists are an event-control/FMIC tool,
+    // not part of the deliberately minimal Staff PWA (Incidents + Messaging only).
     .authorization((allow) => [
-      allow.groups(['Admin', 'Controller', 'Loggist', 'Steward']).to(['create', 'read', 'update']),
+      allow.groups(['event-control', 'fmic']).to(['create', 'read', 'update']),
       allow.authenticated().to(['read']),
     ]),
 
@@ -312,8 +318,30 @@ const schema = a.schema({
       urgent: a.boolean(),
     })
     .returns(a.integer())
-    .authorization((allow) => [allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'])])
+    .authorization((allow) => [allow.groups(['event-control', 'fmic', 'staff'])])
     .handler(a.handler.function(sendEscalationPush)),
+
+  MessageChannel: a.enum(['OPS', 'SECURITY', 'STEWARDS', 'MEDICAL']),
+
+  // Text-based backup to the DMR radio plan (Event Control enhancement) —
+  // channels mirror the radio channels for familiarity. OPS is broadcast:
+  // event-control/fmic post, everyone reads; the other three channels are
+  // open to staff as well. Enforcing "staff can't post to OPS" needs a
+  // value-conditional check a model/field-level rule can't express (auth
+  // rules restrict by field name, not by the enum value written to it), so
+  // that's client-side only for now (src/pages/Messages.tsx) — same
+  // documented limitation as the Level 4 lock and Staff zone-scoping.
+  Message: a
+    .model({
+      channel: a.ref('MessageChannel').required(),
+      text: a.string().required(),
+      senderId: a.string().required(),
+      senderName: a.string().required(),
+      senderRole: a.string().required(),
+    })
+    .authorization((allow) => [
+      allow.groups(['event-control', 'fmic', 'staff']).to(['create', 'read']),
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

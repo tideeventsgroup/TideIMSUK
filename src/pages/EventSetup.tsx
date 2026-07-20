@@ -9,9 +9,9 @@ import type { EventInfo } from '../types/event';
 const emptyForm = { id: null as string | null, name: '', venue: '', startDate: '', endDate: '', zones: [] as ZoneKey[] };
 
 /**
- * Admin-only: configure the Event(s) this device logs incidents against.
- * Replaces manually writing a GraphQL mutation in the AppSync console —
- * the previous only way to seed an Event for the app to work at all.
+ * Event Control only: configure the Event(s) this device logs incidents
+ * against. Replaces manually writing a GraphQL mutation in the AppSync
+ * console — the previous only way to seed an Event for the app to work at all.
  */
 export function EventSetup() {
   const { user } = useAuth();
@@ -20,10 +20,10 @@ export function EventSetup() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (user && user.role !== 'Admin') {
+  if (user && user.role !== 'event-control') {
     return (
       <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
-        Only an Admin can access event setup.
+        Only Event Control can access event setup.
       </p>
     );
   }

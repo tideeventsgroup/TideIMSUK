@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ZONES, type ZoneKey } from '../constants/zones';
 import { setMyAssignedZone } from '../utils/userProfile';
 
-/** Self-service zone assignment for Stewards — LiveBoard filters to this zone. */
+/** Self-service zone assignment for Staff — StaffHome filters to this zone. */
 export function MyZoneSelector() {
   const { user, refresh } = useAuth();
   const [busy, setBusy] = useState(false);

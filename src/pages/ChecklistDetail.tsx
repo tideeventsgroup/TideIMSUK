@@ -46,6 +46,14 @@ export function ChecklistDetail() {
 
   if (!instance || !user) return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>Loading…</p>;
 
+  if (user.role !== 'event-control' && user.role !== 'fmic') {
+    return (
+      <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+        Only Event Control/FMIC can access checklists.
+      </p>
+    );
+  }
+
   const saveItems = async (items: ChecklistInstanceItem[]) => {
     await client.models.ChecklistInstance.update({ id: instance.id, items });
   };

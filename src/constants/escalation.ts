@@ -5,9 +5,13 @@
  */
 
 export type EscalationLevelKey = 'Level1' | 'Level2' | 'Level3' | 'Level4';
-// Medical is a discipline-scoped viewer role (sees only category:Medical
-// incidents) added alongside the OSSP command-structure roles.
-export type Role = 'Admin' | 'Controller' | 'Loggist' | 'Steward' | 'Medical';
+
+/**
+ * Four-role model: event-control (full admin), fmic (operational,
+ * Level 1-2 only), staff (ground roles, own-zone incidents + messaging),
+ * view-only (read-only, no declare rights at all).
+ */
+export type Role = 'event-control' | 'fmic' | 'staff' | 'view-only';
 
 export interface EscalationLevelDef {
   key: EscalationLevelKey;
@@ -15,7 +19,7 @@ export interface EscalationLevelDef {
   name: string;
   whoActs: string;
   appBehaviour: string;
-  /** Only these roles may *declare* this level. Everyone can report/suggest it. */
+  /** Only these roles may *declare* this level. Everyone (except view-only) can report/suggest it. */
   canDeclare: Role[];
 }
 
@@ -26,15 +30,15 @@ export const ESCALATION_LEVELS: EscalationLevelDef[] = [
     name: 'Minor',
     whoActs: 'Ground team manages; reports to Event Control',
     appBehaviour: 'Standard log entry. No alert.',
-    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'],
+    canDeclare: ['event-control', 'fmic'],
   },
   {
     key: 'Level2',
     number: 2,
     name: 'Significant',
     whoActs: 'Event Control directs FMIC response; Event Director informed',
-    appBehaviour: 'Flags on the live board; notifies Controller role.',
-    canDeclare: ['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'],
+    appBehaviour: 'Flags on the live board; notifies Event Control/FMIC.',
+    canDeclare: ['event-control', 'fmic'],
   },
   {
     key: 'Level3',
@@ -44,7 +48,7 @@ export const ESCALATION_LEVELS: EscalationLevelDef[] = [
       'Tide declares incident level; FMIC commands ground response; agencies notified; programme suspension considered',
     appBehaviour:
       'Push alert to every logged-in device; incident pinned to top of feed; auto-switches suggested radio reference to EMERGENCY (Ch5) note.',
-    canDeclare: ['Admin', 'Controller'],
+    canDeclare: ['event-control'],
   },
   {
     key: 'Level4',
@@ -53,8 +57,8 @@ export const ESCALATION_LEVELS: EscalationLevelDef[] = [
     whoActs:
       '999 called; Police Scotland/emergency services assume scene command; Tide co-ordinates alongside statutory command',
     appBehaviour:
-      'Push alert + on-screen banner across all devices; second-level timestamp precision; locks incident from anyone but Controller/Admin roles.',
-    canDeclare: ['Admin', 'Controller'],
+      'Push alert + on-screen banner across all devices; second-level timestamp precision; locks incident from anyone but Event Control.',
+    canDeclare: ['event-control'],
   },
 ];
 
@@ -65,4 +69,8 @@ export function canDeclareLevel(role: Role, level: EscalationLevelKey): boolean 
 
 export function escalationDef(level: EscalationLevelKey | string): EscalationLevelDef | undefined {
   return ESCALATION_LEVELS.find((l) => l.key === level);
+}
+
+export function roleLabel(role: Role): string {
+  return { 'event-control': 'Event Control', fmic: 'FMIC', staff: 'Staff', 'view-only': 'View Only' }[role];
 }

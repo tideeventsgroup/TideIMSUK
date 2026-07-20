@@ -121,7 +121,7 @@ export async function exportIncidentToPdf(incident: Incident) {
       ['GPS', incident.lat && incident.lng ? `${incident.lat.toFixed(5)}, ${incident.lng.toFixed(5)}` : '—'],
       ['Logged by', `${incident.loggedByName} (${incident.loggedByRole})`],
       ['Assigned agency', incident.assignedAgency ?? '—'],
-      ['Locked', incident.locked ? 'Yes — Controller/Admin only' : 'No'],
+      ['Locked', incident.locked ? 'Yes — Event Control only' : 'No'],
     ],
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } },
   });

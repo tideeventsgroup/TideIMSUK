@@ -84,7 +84,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
             fontWeight: 600,
           }}
         >
-          <Lock size={12} /> Locked — Controller/Admin only
+          <Lock size={12} /> Locked — Event Control only
         </div>
       )}
 

@@ -1,7 +1,8 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
+import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
@@ -9,6 +10,7 @@ import { RoleGate } from './components/RoleGate';
 import { MyZoneSelector } from './components/MyZoneSelector';
 import { PushSubscribeToggle } from './components/PushSubscribeToggle';
 import { LiveBoard } from './pages/LiveBoard';
+import { StaffHome } from './pages/StaffHome';
 import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
 import { Reports } from './pages/Reports';
@@ -16,6 +18,7 @@ import { EventSetup } from './pages/EventSetup';
 import { RiskRegister } from './pages/RiskRegister';
 import { Checklists } from './pages/Checklists';
 import { ChecklistDetail } from './pages/ChecklistDetail';
+import { Messages } from './pages/Messages';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -74,23 +77,35 @@ export default function App() {
             <Logo />
           </Link>
           <nav className="nav-scroll" style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'nowrap', minWidth: 0 }}>
-            <NavLink to="/" label="Live board" icon={RadioIcon} />
-            <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
-            <RoleGate allow={['Admin', 'Controller']}>
+            {/* Staff PWA is deliberately minimal — two tabs only, no dashboard/map/reports clutter. */}
+            <RoleGate allow={['staff']}>
+              <NavLink to="/" label="Incidents" icon={RadioIcon} />
+              <NavLink to="/messages" label="Messages" icon={MessageSquare} />
+            </RoleGate>
+            <RoleGate allow={['event-control', 'fmic', 'view-only']}>
+              <NavLink to="/" label="Live board" icon={RadioIcon} />
+            </RoleGate>
+            <RoleGate allow={['event-control', 'fmic']}>
+              <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
+            </RoleGate>
+            <RoleGate allow={['event-control']}>
               <NavLink to="/risk-register" label="Risk register" icon={ShieldAlert} />
             </RoleGate>
-            <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
-            <RoleGate allow={['Admin']}>
+            <RoleGate allow={['event-control', 'fmic']}>
+              <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
+              <NavLink to="/messages" label="Messages" icon={MessageSquare} />
+            </RoleGate>
+            <RoleGate allow={['event-control']}>
               <NavLink to="/setup" label="Setup" icon={Settings} />
             </RoleGate>
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
-          <RoleGate allow={['Steward']}>
+          <RoleGate allow={['staff']}>
             <MyZoneSelector />
           </RoleGate>
           <span className="header-user-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-            {user?.name} <span className="mono">· {user?.role}</span>
+            {user?.name} <span className="mono">· {user && roleLabel(user.role)}</span>
           </span>
           <PushSubscribeToggle />
           <ThemeToggle />
@@ -101,7 +116,7 @@ export default function App() {
       </header>
 
       <Routes>
-        <Route path="/" element={<LiveBoard />} />
+        <Route path="/" element={user?.role === 'staff' ? <StaffHome /> : <LiveBoard />} />
         <Route path="/incidents/new" element={<NewIncident />} />
         <Route path="/incidents/:id" element={<IncidentDetail />} />
         <Route path="/reports" element={<Reports />} />
@@ -109,6 +124,7 @@ export default function App() {
         <Route path="/risk-register" element={<RiskRegister />} />
         <Route path="/checklists" element={<Checklists />} />
         <Route path="/checklists/:id" element={<ChecklistDetail />} />
+        <Route path="/messages" element={<Messages />} />
       </Routes>
     </div>
   );
