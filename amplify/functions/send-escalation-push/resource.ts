@@ -13,6 +13,11 @@ export const sendEscalationPush = defineFunction({
   timeoutSeconds: 30,
   environment: {
     VAPID_PRIVATE_KEY: secret('VAPID_PRIVATE_KEY'),
-    VAPID_PUBLIC_KEY: 'BIamM5rx-m24Bktr9XS9X0BVZbmnNM5fLw8VJhBBHRplbXW1gfbw-yh2249o0lhBkG2AHrX4bdETBaY78JzI25U',
+    VAPID_PUBLIC_KEY: 'BCetlSWyQ6mOrWjoij8etPyX_Lz5skpL0alE-AkRFpa359R_fuhpsMrWu_e_V8K3Q5b18lR8Xjy0vdKgKoe2CmM',
   },
+  // Grouped with the data stack (not its own nested stack) — it's both a
+  // custom mutation handler for `data` and granted direct DynamoDB table
+  // access in backend.ts, which would otherwise create a circular
+  // dependency between the function and data nested stacks.
+  resourceGroupName: 'data',
 });

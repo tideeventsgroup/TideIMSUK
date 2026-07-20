@@ -1,7 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { triageAssist } from '../functions/triage-assist/resource';
 import { shiftSummary } from '../functions/shift-summary/resource';
-import { checklistGenerator } from '../functions/checklist-generator/resource';
 import { sendEscalationPush } from '../functions/send-escalation-push/resource';
 
 /**
@@ -295,13 +294,7 @@ const schema = a.schema({
     .returns(a.integer())
     .authorization((allow) => [allow.groups(['Controller', 'Admin'])])
     .handler(a.handler.function(sendEscalationPush)),
-})
-  // Schema-level grants: resource access is schema-wide (not scoped to
-  // individual models) in Gen2.
-  .authorization((allow) => [
-    allow.resource(checklistGenerator).to(['query', 'mutate']),
-    allow.resource(sendEscalationPush).to(['query', 'mutate']),
-  ]);
+});
 
 export type Schema = ClientSchema<typeof schema>;
 

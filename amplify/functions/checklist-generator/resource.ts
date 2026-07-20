@@ -10,4 +10,8 @@ export const checklistGenerator = defineFunction({
   entry: './handler.ts',
   schedule: 'every day',
   timeoutSeconds: 60,
+  // Grouped with the data stack (not its own nested stack) — it's granted
+  // direct DynamoDB table access in backend.ts, which would otherwise create
+  // a circular dependency between the function and data nested stacks.
+  resourceGroupName: 'data',
 });

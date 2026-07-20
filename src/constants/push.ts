@@ -2,7 +2,7 @@
  * Must match VAPID_PUBLIC_KEY in amplify/functions/send-escalation-push/resource.ts —
  * the public half is safe to ship to the client, the private half stays a Lambda secret.
  */
-export const VAPID_PUBLIC_KEY = 'BIamM5rx-m24Bktr9XS9X0BVZbmnNM5fLw8VJhBBHRplbXW1gfbw-yh2249o0lhBkG2AHrX4bdETBaY78JzI25U';
+export const VAPID_PUBLIC_KEY = 'BCetlSWyQ6mOrWjoij8etPyX_Lz5skpL0alE-AkRFpa359R_fuhpsMrWu_e_V8K3Q5b18lR8Xjy0vdKgKoe2CmM';
 
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
