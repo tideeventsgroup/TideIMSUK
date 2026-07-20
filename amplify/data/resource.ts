@@ -147,13 +147,20 @@ const schema = a.schema({
       // adds to it), so create/read must both be re-granted explicitly
       // alongside the update restriction — every role that can create an
       // incident sets escalationLevel: 'Level1' as part of that create call.
+      // IMPORTANT: a group must appear in exactly one rule per field here —
+      // listing Controller/Admin in both a broad create/read rule and a
+      // separate update-only rule (rather than one combined rule) makes
+      // Amplify's per-field auth codegen drop their create grant entirely
+      // (confirmed live: Admin got "Unauthorized on [escalationLevel,
+      // locked]" on create while Loggist/Steward/Medical, who only ever
+      // appear in one rule, worked fine).
       escalationLevel: a
         .ref('EscalationLevel')
         .required()
         .authorization((allow) => [
-          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read']),
+          allow.groups(['Controller', 'Admin']).to(['create', 'read', 'update']),
+          allow.groups(['Loggist', 'Steward', 'Medical']).to(['create', 'read']),
           allow.authenticated().to(['read']),
-          allow.groups(['Controller', 'Admin']).to(['update']),
         ]),
       loggedByUserId: a.string().required(),
       loggedByName: a.string().required(),
@@ -174,14 +181,15 @@ const schema = a.schema({
       // Lambda authorizer/resolver is the follow-up for full server-side enforcement.
       // Every role that can create an incident sets `locked: false` on create
       // (NewIncident.tsx), so create/read need to be granted broadly too —
-      // only the later *change* to true is Controller/Admin-only.
+      // only the later *change* to true is Controller/Admin-only. See the
+      // note on escalationLevel above re: one rule per group per field.
       locked: a
         .boolean()
         .default(false)
         .authorization((allow) => [
-          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read']),
+          allow.groups(['Controller', 'Admin']).to(['create', 'read', 'update']),
+          allow.groups(['Loggist', 'Steward', 'Medical']).to(['create', 'read']),
           allow.authenticated().to(['read']),
-          allow.groups(['Controller', 'Admin']).to(['update']),
         ]),
       resolvedAt: a.datetime(),
     })
