@@ -18,10 +18,18 @@ self.addEventListener('push', (event: PushEvent) => {
         // Level 3/4 escalations pin until dismissed; routine logging notifications
         // (new incident, status change, update added) auto-dismiss like normal.
         requireInteraction: payload.urgent ?? false,
+        // Level 4 only: a long, distinct vibration pattern (supported on
+        // Android; iOS/desktop ignore it) — the one signal that reaches a
+        // device with the app fully closed, alongside the OS's own default
+        // notification sound (silent is never set, so that always plays).
+        ...(payload.alarm ? { vibrate: [400, 200, 400, 200, 400, 200, 800] } : {}),
       });
       // Service workers can't play audio themselves — tell every open tab
-      // to sound the siren instead. No effect if the app isn't open anywhere;
-      // the OS/browser's own notification sound is the only audible alert then.
+      // to sound the real siren instead (see AlarmListener.tsx). No effect
+      // if the app isn't open anywhere; a closed app only ever gets the
+      // vibration above plus the OS's default notification sound — the Web
+      // Notifications API has no way to attach a custom sound file, closed
+      // or open, and a service worker has no audio API at all.
       if (payload.alarm) {
         const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const client of clients) client.postMessage({ type: 'PLAY_ALARM' });
