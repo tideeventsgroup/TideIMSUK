@@ -4,28 +4,9 @@ import { buildHandoverSummary, exportIncidentsToCsv } from '../utils/exportCsv';
 import { categoryLabel } from '../constants/taxonomy';
 import { zoneLabel } from '../constants/zones';
 import { IncidentCard } from '../components/IncidentCard';
+import { StatTile } from '../components/StatTile';
 
 const DEFAULT_EVENT_ID = import.meta.env.VITE_EVENT_ID ?? 'default-event';
-
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-md)',
-        padding: 'var(--space-4)',
-        background: 'var(--color-surface-raised)',
-        textAlign: 'center',
-      }}
-    >
-      <div className="mono" style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
-        {value}
-      </div>
-      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 4 }}>{label}</div>
-    </div>
-  );
-}
 
 function BreakdownList({ title, entries, labeler }: { title: string; entries: [string, number][]; labeler: (k: string) => string }) {
   const max = Math.max(1, ...entries.map(([, v]) => v));

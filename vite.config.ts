@@ -8,12 +8,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon-32.png', 'favicon-48.png', 'icons/*.png', 'brand/*.png'],
       manifest: {
         name: 'Tide IMS',
         short_name: 'Tide IMS',
         description: 'Incident Management System for Event Control Rooms',
-        theme_color: '#333333',
+        theme_color: '#F05524',
         background_color: '#FFFFFF',
         display: 'standalone',
         start_url: '/',

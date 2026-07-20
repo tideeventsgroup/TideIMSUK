@@ -4,6 +4,7 @@ import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2 } from 'lucide
 import { useAuth } from './context/AuthContext';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
 import { ThemeToggle } from './components/ThemeToggle';
+import { Logo } from './components/Logo';
 import { LiveBoard } from './pages/LiveBoard';
 import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
@@ -21,8 +22,9 @@ function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: t
         gap: 'var(--space-2)',
         padding: 'var(--space-2) var(--space-3)',
         borderRadius: 'var(--radius-sm)',
-        color: active ? 'var(--color-accent-contrast)' : 'var(--color-text-secondary)',
-        background: active ? 'var(--color-accent)' : 'transparent',
+        color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        background: 'transparent',
+        borderBottom: active ? '2px solid var(--color-brand)' : '2px solid transparent',
         textDecoration: 'none',
         fontSize: 'var(--text-sm)',
         fontWeight: 600,
@@ -56,7 +58,9 @@ export default function App() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)' }}>
-          <strong style={{ fontSize: 'var(--text-md)', letterSpacing: '-0.01em' }}>Tide IMS</strong>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center' }} aria-label="Tide IMS home">
+            <Logo />
+          </Link>
           <nav style={{ display: 'flex', gap: 'var(--space-1)' }}>
             <NavLink to="/" label="Live board" icon={RadioIcon} />
             <NavLink to="/reports" label="Reports" icon={FileBarChart2} />

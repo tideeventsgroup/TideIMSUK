@@ -37,6 +37,26 @@ a real backend.
 - **AI triage-assist** — `amplify/functions/triage-assist`: a Lambda that
   calls Groq server-side only, wired through a custom AppSync query. The
   key never reaches the browser. Not yet wired into the incident form UI.
+- **Design system** — token-based light "office" and dark "ops console"
+  themes (`src/styles/tokens.css`), a theme toggle that persists to
+  `localStorage`, and a `SeverityBadge` that's always icon+text+color (never
+  color-only) so Level 1–4 reads correctly under daylight glare and for
+  colorblind users. Declaring Level 3/4 requires an explicit confirm dialog.
+- **Brand** — real Tide Events Group Scotland logo (shield mark + wordmark,
+  theme-aware swap between the black-text and white-text exports) used for
+  the header lockup, favicon, and PWA icons; brand orange (`#F05524`,
+  sampled from the logo) reserved for primary actions/focus rings and kept
+  deliberately distinct from the severity color scale.
+- **Live board search/filter + KPI strip** — free-text search plus
+  category/zone/status/level filters, and an at-a-glance Open/In
+  Progress/Active L3-L4 stat strip.
+- **Wind conditions panel** — live wind speed/gust/direction for
+  Stranraer via Open-Meteo (no API key needed), with a caution/action
+  threshold indicator tied directly to the OSSP's wind-threshold incident
+  categories (marquee wind-threshold breach, fireworks wind-abort decision).
+  The thresholds in `WindConditionsPanel.tsx` are placeholders — replace
+  with your structural engineer's and fireworks contractor's certified
+  figures before relying on this for a go/no-go call.
 
 ## Known scaffold gaps (by design, flagged rather than hidden)
 
@@ -114,11 +134,16 @@ amplify/
   functions/triage-assist/  Groq-backed AI triage Lambda (server-side only)
   backend.ts               Amplify Gen 2 entry point
 src/
-  constants/               taxonomy, zones, escalation levels, brand theme
+  styles/tokens.css        design tokens — light/dark theme, severity scale, brand orange
+  constants/               taxonomy, zones, escalation levels
   context/AuthContext.tsx  role/group resolution from the Cognito session
+  context/ThemeContext.tsx light/dark toggle, persisted to localStorage
   data/client.ts           typed AppSync client
   hooks/                   useIncidents (subscriptions), useGeolocation
   offline/queue.ts         offline write queue
   pages/                   LiveBoard, NewIncident, IncidentDetail, Reports
-  components/               IncidentCard, EscalationBanner, RoleGate, etc.
+  components/               IncidentCard, EscalationBanner, SeverityBadge,
+                             IncidentFilters, WindConditionsPanel, Logo, etc.
+public/brand/              real Tide logo exports (black-text / white-text)
+public/icons/, favicon-*.png  generated from the logo's shield mark
 ```

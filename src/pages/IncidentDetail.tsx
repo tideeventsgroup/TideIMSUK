@@ -138,7 +138,7 @@ export function IncidentDetail() {
           <button
             key={s}
             type="button"
-            className={incident.status === s ? '' : 'secondary'}
+            className={incident.status === s ? 'neutral' : 'secondary'}
             disabled={busy || editLocked || incident.status === s}
             onClick={() => setStatus(s)}
           >

@@ -26,14 +26,15 @@ h3 {
   margin: 0 0 var(--space-2);
 }
 
+/* Primary CTA — brand orange, reserved for the one main action per screen. */
 button {
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  border: 1px solid var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
   border-radius: var(--radius-sm);
   padding: 0 var(--space-4);
   min-height: 44px;
@@ -57,6 +58,13 @@ button.secondary {
   background: transparent;
   color: var(--color-text-primary);
   border-color: var(--color-border-strong);
+}
+
+/* Neutral filled — for state indicators (e.g. "current status"), not actions. */
+button.neutral {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
 }
 
 button.danger {
