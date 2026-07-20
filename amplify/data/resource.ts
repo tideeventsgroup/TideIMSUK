@@ -141,14 +141,17 @@ const schema = a.schema({
       // (status: 'Open', priority: 'Standard', escalationLevel: 'Level1' on create).
       status: a.ref('IncidentStatus').required(),
       priority: a.ref('Priority').required(),
-      // Only Tide declares incident level (OSSP 5.2) — Controller/Admin only.
-      // Field-level auth on a required field overrides the model-level default for
-      // that field, so read must be re-granted explicitly alongside the update restriction.
+      // Only Tide declares incident level (OSSP 5.2) — Controller/Admin only
+      // may *change* it after creation. Field-level auth on a required field
+      // overrides the model-level default for that field entirely (not just
+      // adds to it), so create/read must both be re-granted explicitly
+      // alongside the update restriction — every role that can create an
+      // incident sets escalationLevel: 'Level1' as part of that create call.
       escalationLevel: a
         .ref('EscalationLevel')
         .required()
         .authorization((allow) => [
-          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['read']),
+          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read']),
           allow.authenticated().to(['read']),
           allow.groups(['Controller', 'Admin']).to(['update']),
         ]),
@@ -169,10 +172,17 @@ const schema = a.schema({
       // across every other field (status, updates[], etc.) needs a custom resolver —
       // the frontend enforces it client-side for now (see IncidentDetail.tsx); a
       // Lambda authorizer/resolver is the follow-up for full server-side enforcement.
+      // Every role that can create an incident sets `locked: false` on create
+      // (NewIncident.tsx), so create/read need to be granted broadly too —
+      // only the later *change* to true is Controller/Admin-only.
       locked: a
         .boolean()
         .default(false)
-        .authorization((allow) => [allow.groups(['Controller', 'Admin']).to(['update'])]),
+        .authorization((allow) => [
+          allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical']).to(['create', 'read']),
+          allow.authenticated().to(['read']),
+          allow.groups(['Controller', 'Admin']).to(['update']),
+        ]),
       resolvedAt: a.datetime(),
     })
     .authorization((allow) => [
