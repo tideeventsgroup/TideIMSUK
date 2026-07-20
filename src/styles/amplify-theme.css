@@ -1,0 +1,57 @@
+/**
+ * Reskins @aws-amplify/ui-react's Authenticator to match the Tide IMS
+ * design tokens (src/styles/tokens.css), rather than shipping Amplify's
+ * default blue/purple look. Values reference our own CSS custom
+ * properties so light/dark mode is inherited automatically.
+ */
+:root {
+  --amplify-fonts-default-static: var(--font-sans);
+  --amplify-fonts-default-variable: var(--font-sans);
+
+  --amplify-colors-font-primary: var(--color-text-primary);
+  --amplify-colors-font-secondary: var(--color-text-secondary);
+  --amplify-colors-font-interactive: var(--color-brand);
+  --amplify-colors-background-primary: var(--color-bg);
+  --amplify-colors-background-secondary: var(--color-surface);
+  --amplify-colors-border-primary: var(--color-border-strong);
+  --amplify-colors-border-secondary: var(--color-border);
+
+  --amplify-radii-small: var(--radius-sm);
+  --amplify-radii-medium: var(--radius-md);
+
+  --amplify-components-button-primary-background-color: var(--color-brand);
+  --amplify-components-button-primary-hover-background-color: var(--color-brand);
+  --amplify-components-button-primary-focus-background-color: var(--color-brand);
+  --amplify-components-button-primary-active-background-color: var(--color-brand);
+  --amplify-components-button-link-color: var(--color-brand);
+
+  --amplify-components-fieldcontrol-focus-border-color: var(--color-brand);
+  --amplify-components-tabs-item-active-color: var(--color-brand);
+  --amplify-components-tabs-item-active-border-color: var(--color-brand);
+  --amplify-components-tabs-item-focus-color: var(--color-brand);
+  --amplify-components-tabs-item-hover-color: var(--color-brand);
+
+  --amplify-components-authenticator-router-box-shadow: none;
+  --amplify-components-authenticator-router-border-color: var(--color-border);
+  --amplify-components-authenticator-form-padding: var(--space-6);
+}
+
+[data-amplify-authenticator] {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+[data-amplify-authenticator] [data-amplify-container] {
+  margin: auto;
+  padding: var(--space-6) 0;
+}
+
+[data-amplify-authenticator] [data-amplify-router] {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+
+.amplify-button--primary {
+  color: var(--color-brand-contrast) !important;
+}
