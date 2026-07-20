@@ -62,6 +62,11 @@ export function NewIncident() {
   const [linkedRiskIds, setLinkedRiskIds] = useState<string[]>([]);
   const [photoKeys, setPhotoKeys] = useState<string[]>([]);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [locationDetail, setLocationDetail] = useState('');
+  const [personsInvolved, setPersonsInvolved] = useState('');
+  const [witnesses, setWitnesses] = useState('');
+  const [injuredCount, setInjuredCount] = useState<number | null>(null);
+  const [reporterCallsign, setReporterCallsign] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gpsRequested = useRef(false);
   const zoneTouched = useRef(false);
@@ -189,6 +194,11 @@ export function NewIncident() {
       lng: position?.lng,
       updates: [],
       attachmentKeys: photoKeys.length ? photoKeys : undefined,
+      locationDetail: locationDetail || undefined,
+      personsInvolved: personsInvolved || undefined,
+      witnesses: witnesses || undefined,
+      injuredCount: injuredCount ?? undefined,
+      reporterCallsign: reporterCallsign || undefined,
       locked: false,
       // Stores risk refs (e.g. "R04"), not Risk table PKs — human-readable on the
       // incident card/PDF/CSV without a join, matching how OSSP documents cite hazards.
@@ -341,30 +351,34 @@ export function NewIncident() {
         <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--color-border)' }} />
       </div>
 
-      <label>
-        Category
-        <select value={category} onChange={(e) => handleCategoryChange(e.target.value as CategoryKey)}>
-          {CATEGORIES.map((c) => (
-            <option key={c.key} value={c.key}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <span className="section-label">Classification</span>
 
-      {categoryDef && categoryDef.subcategories.length > 0 && (
-        <label>
-          Subcategory
-          <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
-            <option value="">— select —</option>
-            {categoryDef.subcategories.map((s) => (
-              <option key={s} value={s}>
-                {s}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <label style={{ flex: '1 1 200px' }}>
+          Category
+          <select value={category} onChange={(e) => handleCategoryChange(e.target.value as CategoryKey)}>
+            {CATEGORIES.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label}
               </option>
             ))}
           </select>
         </label>
-      )}
+
+        {categoryDef && categoryDef.subcategories.length > 0 && (
+          <label style={{ flex: '1 1 200px' }}>
+            Subcategory
+            <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
+              <option value="">— select —</option>
+              {categoryDef.subcategories.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       <ZonePicker
         value={zone}
@@ -374,6 +388,15 @@ export function NewIncident() {
         }}
         autoSuggested={suggestedZone}
       />
+
+      <label>
+        Precise location <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>
+        <input
+          value={locationDetail}
+          onChange={(e) => setLocationDetail(e.target.value)}
+          placeholder="e.g. by the east barrier, near stage left"
+        />
+      </label>
 
       <label>
         Priority
@@ -389,16 +412,59 @@ export function NewIncident() {
         declares incident level, not ground staff).
       </p>
 
+      <span className="section-label">People involved</span>
+
+      <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <label style={{ flex: '2 1 220px' }}>
+          Persons involved <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>
+          <input
+            value={personsInvolved}
+            onChange={(e) => setPersonsInvolved(e.target.value)}
+            placeholder="Names, descriptions, or count"
+          />
+        </label>
+        <label style={{ flex: '1 1 140px' }}>
+          Injured / casualties <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>
+          <input
+            type="number"
+            min={0}
+            value={injuredCount ?? ''}
+            onChange={(e) => setInjuredCount(e.target.value ? Number(e.target.value) : null)}
+          />
+        </label>
+      </div>
+
       <label>
-        Radio channel
+        Witnesses <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>
         <input
-          type="number"
-          min={1}
-          max={5}
-          value={radioChannel ?? ''}
-          onChange={(e) => setRadioChannel(e.target.value ? Number(e.target.value) : null)}
+          value={witnesses}
+          onChange={(e) => setWitnesses(e.target.value)}
+          placeholder="Names and contact details, if given"
         />
       </label>
+
+      <span className="section-label">Comms</span>
+
+      <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <label style={{ flex: '1 1 120px' }}>
+          Radio channel
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={radioChannel ?? ''}
+            onChange={(e) => setRadioChannel(e.target.value ? Number(e.target.value) : null)}
+          />
+        </label>
+        <label style={{ flex: '1 1 160px' }}>
+          Your callsign <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>
+          <input
+            value={reporterCallsign}
+            onChange={(e) => setReporterCallsign(e.target.value)}
+            placeholder="e.g. Steward 4"
+          />
+        </label>
+      </div>
 
       <label>
         Assigned agency <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400 }}>(optional)</span>

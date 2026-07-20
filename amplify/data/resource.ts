@@ -177,6 +177,14 @@ const schema = a.schema({
       attachmentKeys: a.string().array(),
       // Risk register tagging (WeTrack-inspired) — optional, any role may tag.
       linkedRiskIds: a.string().array(),
+      // Extra detail, all optional — kept off the primary capture flow
+      // (NewIncident.tsx's "Add detail" section), same narrative-first
+      // philosophy as the rest of the form.
+      locationDetail: a.string(),
+      personsInvolved: a.string(),
+      witnesses: a.string(),
+      injuredCount: a.integer(),
+      reporterCallsign: a.string(),
       // Level 4 locks the incident to event-control only (OSSP command handover,
       // event-control is the only role that ever declares Level 4).
       // NOTE: this only field-restricts writes to `locked` itself. Enforcing the lock
@@ -308,7 +316,12 @@ const schema = a.schema({
   // update added, escalation declared) — see src/utils/pushNotify.ts and
   // its call sites. `urgent` maps to Notification.requireInteraction in
   // the service worker (src/sw.ts) — only Level 3/4 escalations use it, so
-  // routine logging doesn't sit pinned on screen until dismissed.
+  // routine logging doesn't sit pinned on screen until dismissed. `alarm`
+  // (Level 4 declarations only) additionally tells any open app tab to
+  // sound an audible siren via postMessage — see src/sw.ts and
+  // src/components/AlarmListener.tsx. It has no effect if the app isn't
+  // open in a tab; the OS/browser's default notification sound is the
+  // only audible alert when the app is fully closed.
   sendEscalationPush: a
     .mutation()
     .arguments({
@@ -316,6 +329,7 @@ const schema = a.schema({
       body: a.string().required(),
       url: a.string(),
       urgent: a.boolean(),
+      alarm: a.boolean(),
     })
     .returns(a.integer())
     .authorization((allow) => [allow.groups(['event-control', 'fmic', 'staff'])])

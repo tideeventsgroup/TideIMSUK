@@ -154,6 +154,17 @@ a {
   animation: spin 0.8s linear infinite;
 }
 
+/* Subheadings grouping related fields in longer forms (e.g. New Incident's
+   "Add detail" section) — quieter than a page heading, louder than a label. */
+.section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-1);
+}
+
 /* Horizontally-scrolling nav strip — avoids wrapping/clipping the header on
    narrow phones while keeping the sticky header a fixed height. */
 .nav-scroll {

@@ -106,12 +106,14 @@ export function IncidentDetail() {
         locked: newLevel === 'Level4',
       });
       const urgent = newLevel === 'Level3' || newLevel === 'Level4';
+      const alarm = newLevel === 'Level4';
       const levelName = escalationDef(newLevel)?.name ?? newLevel;
       void pushNotify(
         urgent ? `${newLevel === 'Level4' ? 'CRITICAL' : 'MAJOR'} incident declared` : `Escalation: ${levelName}`,
         `${categoryLabel(incident.category)} — ${zoneLabel(incident.zone)}. ${incident.narrative.slice(0, 120)}`,
         `/incidents/${incident.id}`,
         urgent,
+        alarm,
       );
     } finally {
       setBusy(false);
@@ -239,6 +241,55 @@ export function IncidentDetail() {
         <span className="mono">{new Date(incident.timestamp).toLocaleString('en-GB')}</span>
       </p>
       <p style={{ whiteSpace: 'pre-wrap' }}>{incident.narrative}</p>
+
+      {(incident.locationDetail || incident.personsInvolved || incident.witnesses || incident.injuredCount || incident.reporterCallsign || incident.assignedAgency) && (
+        <dl
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 'var(--space-2) var(--space-4)',
+            fontSize: 'var(--text-sm)',
+            margin: 0,
+          }}
+        >
+          {incident.locationDetail && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Location</dt>
+              <dd style={{ margin: 0 }}>{incident.locationDetail}</dd>
+            </div>
+          )}
+          {typeof incident.injuredCount === 'number' && incident.injuredCount > 0 && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Injured / casualties</dt>
+              <dd style={{ margin: 0, color: 'var(--color-danger)', fontWeight: 600 }}>{incident.injuredCount}</dd>
+            </div>
+          )}
+          {incident.personsInvolved && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Persons involved</dt>
+              <dd style={{ margin: 0 }}>{incident.personsInvolved}</dd>
+            </div>
+          )}
+          {incident.witnesses && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Witnesses</dt>
+              <dd style={{ margin: 0 }}>{incident.witnesses}</dd>
+            </div>
+          )}
+          {incident.reporterCallsign && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Reported by (callsign)</dt>
+              <dd style={{ margin: 0 }}>{incident.reporterCallsign}</dd>
+            </div>
+          )}
+          {incident.assignedAgency && (
+            <div>
+              <dt style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)' }}>Assigned agency</dt>
+              <dd style={{ margin: 0 }}>{incident.assignedAgency}</dd>
+            </div>
+          )}
+        </dl>
+      )}
 
       {(incident.linkedRiskIds ?? []).length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginBottom: 'var(--space-2)' }}>

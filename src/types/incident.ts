@@ -33,6 +33,11 @@ export interface Incident {
   updates: IncidentUpdateEntry[];
   attachmentKeys?: string[] | null;
   linkedRiskIds?: string[] | null;
+  locationDetail?: string | null;
+  personsInvolved?: string | null;
+  witnesses?: string | null;
+  injuredCount?: number | null;
+  reporterCallsign?: string | null;
   locked: boolean;
   resolvedAt?: string | null;
 }

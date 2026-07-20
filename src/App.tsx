@@ -4,6 +4,7 @@ import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, Shi
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
+import { AlarmListener } from './components/AlarmListener';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Logo } from './components/Logo';
 import { RoleGate } from './components/RoleGate';
@@ -57,6 +58,7 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh' }}>
       <OfflineQueueBadge />
+      <AlarmListener />
       <header
         style={{
           display: 'flex',
