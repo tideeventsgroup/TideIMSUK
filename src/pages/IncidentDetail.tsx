@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Lock, MapPin, Radio as RadioIcon } from 'lucide-react';
+import { Lock, MapPin, Radio as RadioIcon, FileText } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { categoryLabel } from '../constants/taxonomy';
@@ -8,6 +8,7 @@ import { zoneLabel } from '../constants/zones';
 import { ESCALATION_LEVELS, canDeclareLevel, type EscalationLevelKey } from '../constants/escalation';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { exportIncidentToPdf } from '../utils/pdf';
 import type { Incident, IncidentStatus } from '../types/incident';
 
 export function IncidentDetail() {
@@ -17,6 +18,7 @@ export function IncidentDetail() {
   const [updateText, setUpdateText] = useState('');
   const [busy, setBusy] = useState(false);
   const [pendingLevel, setPendingLevel] = useState<EscalationLevelKey | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -101,10 +103,23 @@ export function IncidentDetail() {
     }
   };
 
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await exportIncidentToPdf(incident);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-4)' }}>
-      <div style={{ marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
         <SeverityBadge level={incident.escalationLevel} />
+        <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
+          <FileText size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+          {pdfBusy ? 'Preparing…' : 'Download PDF'}
+        </button>
       </div>
       <h1 style={{ fontSize: 'var(--text-lg)' }}>
         {categoryLabel(incident.category)}

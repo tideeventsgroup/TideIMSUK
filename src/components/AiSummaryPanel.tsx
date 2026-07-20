@@ -15,7 +15,15 @@ interface HandoverSummary {
 }
 
 /** AI-drafted shift handover summary (Build Plan Section 11) — a draft for a human to review, not a decision. */
-export function AiSummaryPanel({ summary, totalLogged }: { summary: HandoverSummary; totalLogged: number }) {
+export function AiSummaryPanel({
+  summary,
+  totalLogged,
+  onGenerated,
+}: {
+  summary: HandoverSummary;
+  totalLogged: number;
+  onGenerated?: (text: string | null) => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +32,7 @@ export function AiSummaryPanel({ summary, totalLogged }: { summary: HandoverSumm
     setLoading(true);
     setError(null);
     setText(null);
+    onGenerated?.(null);
     try {
       const payload = {
         totalLogged,
@@ -42,6 +51,7 @@ export function AiSummaryPanel({ summary, totalLogged }: { summary: HandoverSumm
       const { data, errors } = await client.queries.shiftSummary({ summaryJson: JSON.stringify(payload) });
       if (errors?.length) throw new Error(errors[0].message);
       setText(data ?? '');
+      onGenerated?.(data ?? null);
     } catch {
       setError('AI summary unavailable right now.');
     } finally {

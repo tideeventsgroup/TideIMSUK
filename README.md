@@ -29,8 +29,12 @@ a real backend.
 - **Escalation** — OSSP Section 5.2 levels enforced both in the UI and at
   the schema's field-authorization level: incidents are created at Level 1;
   only Controller/Admin can declare Level 2–4 or lock a Level 4 incident.
-- **Reporting** — CSV export and a structured shift-handover summary
-  (counts by category/zone, open Level 3/4 list).
+- **Reporting** — CSV and branded PDF export (`src/utils/pdf.ts`, jsPDF —
+  generated entirely client-side, no server round-trip, works offline once
+  cached), covering three report types: a single incident report (from
+  Incident Detail), the full incident log (from the Live Board), and the
+  shift handover/debrief report (from Reports — includes the AI summary if
+  already generated, plus a "Reviewed by / Date" sign-off line).
 - **PWA** — manifest, Workbox-generated service worker (`vite-plugin-pwa`),
   and a `localStorage`-backed offline write queue (`src/offline/queue.ts`)
   that queues incident creation while offline and flushes on reconnect.
@@ -91,6 +95,10 @@ a real backend.
   console/CLI task; it needs an admin-privileged Lambda (`AdminAddUserToGroup`)
   to expose safely through AppSync, which isn't built yet.
 - **No automated tests.**
+- **jsPDF adds real weight to the main bundle** (~140KB gzip) since it's
+  statically imported by three pages rather than route-split — acceptable
+  for a PWA that's installed and cached, but worth lazy-loading
+  (`import('../utils/pdf')`) if initial load time becomes a concern.
 
 ## Connecting a real AWS account
 
@@ -159,6 +167,7 @@ src/
   data/client.ts           typed AppSync client
   hooks/                   useIncidents (subscriptions), useGeolocation
   offline/queue.ts         offline write queue
+  utils/pdf.ts             branded PDF report generation (jsPDF, client-side)
   pages/                   LiveBoard, NewIncident, IncidentDetail, Reports, EventSetup
   components/               IncidentCard, EscalationBanner, SeverityBadge,
                              IncidentFilters, WindConditionsPanel, TriageSuggest,

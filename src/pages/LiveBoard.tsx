@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Plus, Settings } from 'lucide-react';
+import { Download, FileText, Plus, Settings } from 'lucide-react';
 import { useIncidents } from '../hooks/useIncidents';
 import { useAuth } from '../context/AuthContext';
 import { useEvent } from '../context/EventContext';
@@ -11,6 +11,7 @@ import { WindConditionsPanel } from '../components/WindConditionsPanel';
 import { StatTile } from '../components/StatTile';
 import { IncidentFilters, EMPTY_FILTERS, applyIncidentFilters, type IncidentFilterState } from '../components/IncidentFilters';
 import { exportIncidentsToCsv } from '../utils/exportCsv';
+import { exportIncidentLogToPdf } from '../utils/pdf';
 
 const LEVEL_ORDER: Record<string, number> = { Level4: 0, Level3: 1, Level2: 2, Level1: 3 };
 
@@ -19,6 +20,7 @@ export function LiveBoard() {
   const { activeEvent, loading: eventLoading } = useEvent();
   const { incidents, loading } = useIncidents(activeEvent?.id ?? null);
   const [filters, setFilters] = useState<IncidentFilterState>(EMPTY_FILTERS);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const filtered = useMemo(() => applyIncidentFilters(incidents, filters), [incidents, filters]);
 
@@ -53,6 +55,16 @@ export function LiveBoard() {
     );
   }
 
+  const downloadPdf = async () => {
+    if (!activeEvent) return;
+    setPdfBusy(true);
+    try {
+      await exportIncidentLogToPdf(incidents, activeEvent);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return (
     <div>
       <EscalationBanner incidents={incidents} />
@@ -71,6 +83,10 @@ export function LiveBoard() {
           <button type="button" className="secondary" onClick={() => exportIncidentsToCsv(incidents)}>
             <Download size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
             Export CSV
+          </button>
+          <button type="button" className="secondary" onClick={downloadPdf} disabled={pdfBusy}>
+            <FileText size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+            {pdfBusy ? 'Preparing…' : 'Export PDF'}
           </button>
           <Link to="/incidents/new">
             <button type="button">
