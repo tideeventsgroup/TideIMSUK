@@ -1,0 +1,28 @@
+{
+  "_placeholder": "This file is a stand-in so the app builds without a deployed backend. Run `npx ampx sandbox` (or `npx ampx generate outputs` against a deployed branch) to overwrite it with real values before connecting to AWS.",
+  "auth": {
+    "user_pool_id": "eu-west-2_PLACEHOLDER",
+    "aws_region": "eu-west-2",
+    "user_pool_client_id": "placeholder-client-id",
+    "identity_pool_id": "eu-west-2:placeholder-identity-pool",
+    "mfa_methods": ["TOTP"],
+    "standard_required_attributes": ["email"],
+    "username_attributes": ["email"],
+    "user_verification_types": ["email"],
+    "groups": ["Admin", "Controller", "Loggist", "Steward"],
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_symbols": true,
+      "require_uppercase": true
+    }
+  },
+  "data": {
+    "url": "https://placeholder.appsync-api.eu-west-2.amazonaws.com/graphql",
+    "aws_region": "eu-west-2",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": []
+  },
+  "version": "1.4"
+}

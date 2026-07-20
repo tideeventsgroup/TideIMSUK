@@ -1,0 +1,124 @@
+# Tide IMS
+
+Incident Management System for Tide's event control room — a real-time,
+append-only incident log built as an installable PWA on AWS Amplify Gen 2.
+Domain target: `ims.tideeventsgroup.co.uk`.
+
+This repo currently contains the **Phase 0/1 scaffold**: the full data
+model, auth, live board, incident logging/detail views, CSV
+reporting/handover summary, PWA shell with an offline write queue, and a
+server-side AI triage-assist Lambda — all runnable locally against a real
+AWS sandbox once you connect an account. No AWS resources have been
+provisioned from this environment (no credentials here) — `amplify_outputs.json`
+is currently a placeholder so the app builds; see below to connect it to
+a real backend.
+
+## What's implemented
+
+- **Auth** — Cognito user pool via `@aws-amplify/ui-react`'s `Authenticator`,
+  four groups (`Admin`, `Controller`, `Loggist`, `Steward`), role surfaced
+  through `AuthContext`.
+- **Data model** — `amplify/data/resource.ts`: `Event`, `UserProfile`,
+  `Incident` (append-only `updates[]`, field-level authorization so only
+  Controller/Admin can set `escalationLevel` or `locked`).
+- **Live board** — `AppSync` subscriptions (`onCreate`/`onUpdate`), sorted
+  by escalation level, Level 4 banner across all devices.
+- **Incident logging** — full Section 9 category/subcategory taxonomy,
+  GPS capture with zone reverse-lookup (point-in-polygon — zone polygons
+  are placeholders, see below), radio channel suggestion.
+- **Escalation** — OSSP Section 5.2 levels enforced both in the UI and at
+  the schema's field-authorization level: incidents are created at Level 1;
+  only Controller/Admin can declare Level 2–4 or lock a Level 4 incident.
+- **Reporting** — CSV export and a structured shift-handover summary
+  (counts by category/zone, open Level 3/4 list).
+- **PWA** — manifest, Workbox-generated service worker (`vite-plugin-pwa`),
+  and a `localStorage`-backed offline write queue (`src/offline/queue.ts`)
+  that queues incident creation while offline and flushes on reconnect.
+- **AI triage-assist** — `amplify/functions/triage-assist`: a Lambda that
+  calls Groq server-side only, wired through a custom AppSync query. The
+  key never reaches the browser. Not yet wired into the incident form UI.
+
+## Known scaffold gaps (by design, flagged rather than hidden)
+
+- **Zone polygons are empty** (`src/constants/zones.ts`) — trace them from
+  the Official Site Plan 2026 before relying on GPS auto zone-suggestion;
+  the app falls back to manual selection until then.
+- **The Level 4 lock is enforced client-side only.** The schema
+  field-restricts `locked`/`escalationLevel` writes to Controller/Admin,
+  but locking every *other* field (status, `updates[]`) once `locked` is
+  true needs a custom AppSync resolver — see the comment in
+  `amplify/data/resource.ts`.
+- **Photo attachments (S3), push notifications, and the site-map view**
+  (Phase 4) are not built yet — `attachmentKeys` exists on the model as a
+  landing point.
+- **Triage-assist isn't called from the incident form yet** — the Lambda
+  and resolver exist and typecheck; wiring a "suggest" button into
+  `NewIncident.tsx` is the next step.
+- **No automated tests.**
+
+## Connecting a real AWS account
+
+1. Configure AWS credentials for the account/region you want to deploy
+   into (`eu-west-2` recommended per the build plan — UK data residency).
+2. `npm install` (already done if you're reading this from a fresh clone,
+   just run it after cloning).
+3. `npx ampx sandbox` — provisions a personal dev backend (Cognito,
+   AppSync, DynamoDB) and overwrites the placeholder `amplify_outputs.json`
+   with real values. Leave it running while you develop; it hot-reloads
+   backend changes.
+4. Set the Groq key for the triage-assist function:
+   `npx ampx sandbox secret set GROQ_API_KEY` (paste the key when prompted —
+   rotate the key first if it's ever touched a `.env` file or client code).
+5. `npm run dev` — the frontend picks up `amplify_outputs.json`
+   automatically.
+6. Create your first users in the Cognito console (or via `ampx sandbox`
+   output) and add them to the `Admin`/`Controller`/`Loggist`/`Steward`
+   groups as appropriate.
+7. Create at least one `Event` record (via a GraphQL mutation in the
+   AppSync console, or a small seed script) — the live board reads
+   `VITE_EVENT_ID` (defaults to `default-event`); set that env var to
+   match, or create the Event with `id: "default-event"`.
+
+## Deploying to `ims.tideeventsgroup.co.uk`
+
+1. Push this repo to a Git provider Amplify Hosting can read from.
+2. In the Amplify Console, create an app from the repo — Gen 2 apps detect
+   `amplify/backend.ts` automatically and deploy both frontend and backend
+   per branch.
+3. Set the `GROQ_API_KEY` secret for the deployed branch environment
+   (Amplify Console → Secrets, or `ampx pipeline-deploy` with secrets
+   configured) — not as a plaintext env var.
+4. In Route 53, add `ims.tideeventsgroup.co.uk` as a custom domain against
+   the Amplify app; Amplify provisions the ACM certificate.
+5. Confirm MFA is enforced for anyone added to `Controller`/`Admin` groups
+   in the deployed user pool (optional TOTP is configured in
+   `amplify/auth/resource.ts`; tighten to required before go-live if the
+   OSSP requires it).
+
+## Local commands
+
+```bash
+npm run dev               # local frontend dev server
+npm run build              # typecheck + production build (also runs PWA build)
+npm run typecheck:amplify  # typecheck the amplify/ backend definition separately
+npm run sandbox             # npx ampx sandbox — personal cloud dev backend
+npm run lint                # oxlint
+```
+
+## Project layout
+
+```
+amplify/
+  auth/resource.ts        Cognito user pool + groups
+  data/resource.ts        GraphQL schema (Event, UserProfile, Incident)
+  functions/triage-assist/  Groq-backed AI triage Lambda (server-side only)
+  backend.ts               Amplify Gen 2 entry point
+src/
+  constants/               taxonomy, zones, escalation levels, brand theme
+  context/AuthContext.tsx  role/group resolution from the Cognito session
+  data/client.ts           typed AppSync client
+  hooks/                   useIncidents (subscriptions), useGeolocation
+  offline/queue.ts         offline write queue
+  pages/                   LiveBoard, NewIncident, IncidentDetail, Reports
+  components/               IncidentCard, EscalationBanner, RoleGate, etc.
+```

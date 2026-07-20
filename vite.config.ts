@@ -1,0 +1,36 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icons/*.png'],
+      manifest: {
+        name: 'Tide IMS',
+        short_name: 'Tide IMS',
+        description: 'Incident Management System for Event Control Rooms',
+        theme_color: '#333333',
+        background_color: '#FFFFFF',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // App shell precached; API traffic goes over AppSync (handled by the
+        // offline write queue in src/offline/queue.ts), not runtime-cached here.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
+});
