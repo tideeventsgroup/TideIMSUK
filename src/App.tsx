@@ -63,62 +63,75 @@ export default function App() {
       <AlarmListener />
       <header
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: 'var(--space-3) var(--space-4)',
           borderBottom: '1px solid var(--color-border)',
           background: 'var(--color-surface)',
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          gap: 'var(--space-2) var(--space-4)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', minWidth: 0, flex: '1 1 auto' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} aria-label="Tide IMS home">
-            <Logo />
-          </Link>
-          <nav className="nav-scroll" style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'nowrap', minWidth: 0 }}>
-            {/* Staff PWA is deliberately minimal — two tabs only, no dashboard/map/reports clutter. */}
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: 'var(--space-3) var(--space-4)',
+            gap: 'var(--space-2) var(--space-4)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} aria-label="Tide IMS home">
+              <Logo />
+            </Link>
+            <PushSubscribeToggle />
+            <button type="button" className="icon-button" onClick={signOut} aria-label="Sign out" title="Sign out">
+              <LogOut size={18} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
             <RoleGate allow={['staff']}>
-              <NavLink to="/" label="Incidents" icon={RadioIcon} />
-              <NavLink to="/messages" label="Messages" icon={MessageSquare} />
+              <MyZoneSelector />
+              <MyStatusToggle />
             </RoleGate>
-            <RoleGate allow={['event-control', 'fmic', 'view-only']}>
-              <NavLink to="/" label="Live board" icon={RadioIcon} />
-            </RoleGate>
-            <RoleGate allow={['event-control', 'fmic']}>
-              <NavLink to="/ground" label="Ground ops" icon={Users} />
-              <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
-            </RoleGate>
-            <RoleGate allow={['event-control']}>
-              <NavLink to="/risk-register" label="Risk register" icon={ShieldAlert} />
-            </RoleGate>
-            <RoleGate allow={['event-control', 'fmic']}>
-              <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
-              <NavLink to="/messages" label="Messages" icon={MessageSquare} />
-            </RoleGate>
-            <RoleGate allow={['event-control']}>
-              <NavLink to="/setup" label="Setup" icon={Settings} />
-            </RoleGate>
-          </nav>
+            <span className="header-user-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+              {user?.name} <span className="mono">· {user && roleLabel(user.role)}</span>
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+        <nav
+          className="nav-scroll"
+          style={{
+            display: 'flex',
+            gap: 'var(--space-1)',
+            flexWrap: 'nowrap',
+            padding: '0 var(--space-4) var(--space-2)',
+          }}
+        >
+          {/* Staff PWA is deliberately minimal — two tabs only, no dashboard/map/reports clutter. */}
           <RoleGate allow={['staff']}>
-            <MyZoneSelector />
-            <MyStatusToggle />
+            <NavLink to="/" label="Incidents" icon={RadioIcon} />
+            <NavLink to="/messages" label="Messages" icon={MessageSquare} />
           </RoleGate>
-          <span className="header-user-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-            {user?.name} <span className="mono">· {user && roleLabel(user.role)}</span>
-          </span>
-          <PushSubscribeToggle />
-          <ThemeToggle />
-          <button type="button" className="icon-button" onClick={signOut} aria-label="Sign out" title="Sign out">
-            <LogOut size={18} />
-          </button>
-        </div>
+          <RoleGate allow={['event-control', 'fmic', 'view-only']}>
+            <NavLink to="/" label="Live board" icon={RadioIcon} />
+          </RoleGate>
+          <RoleGate allow={['event-control', 'fmic']}>
+            <NavLink to="/ground" label="Ground ops" icon={Users} />
+            <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
+          </RoleGate>
+          <RoleGate allow={['event-control']}>
+            <NavLink to="/risk-register" label="Risk register" icon={ShieldAlert} />
+          </RoleGate>
+          <RoleGate allow={['event-control', 'fmic']}>
+            <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
+            <NavLink to="/messages" label="Messages" icon={MessageSquare} />
+          </RoleGate>
+          <RoleGate allow={['event-control']}>
+            <NavLink to="/setup" label="Setup" icon={Settings} />
+          </RoleGate>
+        </nav>
       </header>
 
       <Routes>
