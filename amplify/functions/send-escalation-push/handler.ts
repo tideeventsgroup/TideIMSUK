@@ -28,13 +28,10 @@ async function scanAllSubscriptions(): Promise<Record<string, any>[]> {
 }
 
 export const handler: Handler = async (event) => {
-  const { incidentId, level, category, zone, narrative } = event.arguments;
+  const { title, body, url, urgent } = event.arguments;
 
   const subscriptions = await scanAllSubscriptions();
-
-  const title = level === 'Level4' ? 'CRITICAL incident declared' : 'MAJOR incident declared';
-  const body = `${category} — ${zone}. ${narrative.slice(0, 120)}`;
-  const payload = JSON.stringify({ title, body, incidentId, level, url: `/incidents/${incidentId}` });
+  const payload = JSON.stringify({ title, body, url: url ?? '/', urgent: urgent ?? false });
 
   let sent = 0;
   await Promise.all(

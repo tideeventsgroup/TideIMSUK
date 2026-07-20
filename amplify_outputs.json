@@ -1395,35 +1395,29 @@
           "type": "Int",
           "isRequired": false,
           "arguments": {
-            "incidentId": {
-              "name": "incidentId",
-              "isArray": false,
-              "type": "ID",
-              "isRequired": true
-            },
-            "level": {
-              "name": "level",
+            "title": {
+              "name": "title",
               "isArray": false,
               "type": "String",
               "isRequired": true
             },
-            "category": {
-              "name": "category",
+            "body": {
+              "name": "body",
               "isArray": false,
               "type": "String",
               "isRequired": true
             },
-            "zone": {
-              "name": "zone",
+            "url": {
+              "name": "url",
               "isArray": false,
               "type": "String",
-              "isRequired": true
+              "isRequired": false
             },
-            "narrative": {
-              "name": "narrative",
+            "urgent": {
+              "name": "urgent",
               "isArray": false,
-              "type": "String",
-              "isRequired": true
+              "type": "Boolean",
+              "isRequired": false
             }
           }
         }

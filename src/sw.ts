@@ -7,14 +7,16 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener('push', (event: PushEvent) => {
   if (!event.data) return;
-  const payload = event.data.json() as { title: string; body: string; url?: string };
+  const payload = event.data.json() as { title: string; body: string; url?: string; urgent?: boolean };
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       data: { url: payload.url ?? '/' },
-      requireInteraction: true,
+      // Level 3/4 escalations pin until dismissed; routine logging notifications
+      // (new incident, status change, update added) auto-dismiss like normal.
+      requireInteraction: payload.urgent ?? false,
     })
   );
 });

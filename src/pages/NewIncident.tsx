@@ -9,11 +9,12 @@ import { useGeolocation } from '../hooks/useGeolocation';
 import { lookupZone } from '../utils/zoneLookup';
 import { CATEGORIES, categoryLabel, type CategoryKey } from '../constants/taxonomy';
 import { ZonePicker } from '../components/ZonePicker';
-import type { ZoneKey } from '../constants/zones';
+import { zoneLabel, type ZoneKey } from '../constants/zones';
 import type { Priority } from '../types/incident';
 import type { Risk } from '../types/risk';
 import { enqueueIncident } from '../offline/queue';
 import { TriageSuggest, type AppliedFields } from '../components/TriageSuggest';
+import { pushNotify } from '../utils/pushNotify';
 
 export function NewIncident() {
   const { user } = useAuth();
@@ -169,6 +170,11 @@ export function NewIncident() {
           })
         );
       }
+      void pushNotify(
+        'New incident logged',
+        `${categoryLabel(category)} — ${zoneLabel(zone)}. ${narrative.slice(0, 120)}`,
+        `/incidents/${created.id}`,
+      );
       navigate('/');
     } catch {
       // Network/server failure — queue locally rather than losing the report.

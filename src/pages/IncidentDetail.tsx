@@ -5,10 +5,11 @@ import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { categoryLabel } from '../constants/taxonomy';
 import { zoneLabel } from '../constants/zones';
-import { ESCALATION_LEVELS, canDeclareLevel, type EscalationLevelKey } from '../constants/escalation';
+import { ESCALATION_LEVELS, canDeclareLevel, escalationDef, type EscalationLevelKey } from '../constants/escalation';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { exportIncidentToPdf } from '../utils/pdf';
+import { pushNotify } from '../utils/pushNotify';
 import type { Incident, IncidentStatus } from '../types/incident';
 
 export function IncidentDetail() {
@@ -66,6 +67,11 @@ export function IncidentDetail() {
         id: incident.id,
         updates: [...(incident.updates ?? []), entry],
       });
+      void pushNotify(
+        `Update — ${categoryLabel(incident.category)}`,
+        `${user.name}: ${entry.text}`,
+        `/incidents/${incident.id}`,
+      );
       setUpdateText('');
     } finally {
       setBusy(false);
@@ -80,6 +86,11 @@ export function IncidentDetail() {
         status,
         resolvedAt: status === 'Resolved' ? new Date().toISOString() : incident.resolvedAt,
       });
+      void pushNotify(
+        `Status: ${status} — ${categoryLabel(incident.category)}`,
+        `${zoneLabel(incident.zone)}. Updated by ${user.name}.`,
+        `/incidents/${incident.id}`,
+      );
     } finally {
       setBusy(false);
     }
@@ -94,19 +105,14 @@ export function IncidentDetail() {
         escalationLevel: newLevel,
         locked: newLevel === 'Level4',
       });
-      if (newLevel === 'Level3' || newLevel === 'Level4') {
-        try {
-          await client.mutations.sendEscalationPush({
-            incidentId: incident.id,
-            level: newLevel,
-            category: incident.category,
-            zone: incident.zone,
-            narrative: incident.narrative,
-          });
-        } catch {
-          // Push fan-out is best-effort — the escalation itself has already been declared.
-        }
-      }
+      const urgent = newLevel === 'Level3' || newLevel === 'Level4';
+      const levelName = escalationDef(newLevel)?.name ?? newLevel;
+      void pushNotify(
+        urgent ? `${newLevel === 'Level4' ? 'CRITICAL' : 'MAJOR'} incident declared` : `Escalation: ${levelName}`,
+        `${categoryLabel(incident.category)} — ${zoneLabel(incident.zone)}. ${incident.narrative.slice(0, 120)}`,
+        `/incidents/${incident.id}`,
+        urgent,
+      );
     } finally {
       setBusy(false);
       setPendingLevel(null);

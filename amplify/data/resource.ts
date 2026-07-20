@@ -298,19 +298,21 @@ const schema = a.schema({
     .handler(a.handler.function(shiftSummary)),
 
   // Fans out a Web Push notification to every stored subscription. Called
-  // by the client only from the Level 3/4 declare action (Controller/Admin
-  // only) — see IncidentDetail.tsx.
+  // from every incident-logging action (new incident, status change,
+  // update added, escalation declared) — see src/utils/pushNotify.ts and
+  // its call sites. `urgent` maps to Notification.requireInteraction in
+  // the service worker (src/sw.ts) — only Level 3/4 escalations use it, so
+  // routine logging doesn't sit pinned on screen until dismissed.
   sendEscalationPush: a
     .mutation()
     .arguments({
-      incidentId: a.id().required(),
-      level: a.string().required(),
-      category: a.string().required(),
-      zone: a.string().required(),
-      narrative: a.string().required(),
+      title: a.string().required(),
+      body: a.string().required(),
+      url: a.string(),
+      urgent: a.boolean(),
     })
     .returns(a.integer())
-    .authorization((allow) => [allow.groups(['Controller', 'Admin'])])
+    .authorization((allow) => [allow.groups(['Admin', 'Controller', 'Loggist', 'Steward', 'Medical'])])
     .handler(a.handler.function(sendEscalationPush)),
 });
 
