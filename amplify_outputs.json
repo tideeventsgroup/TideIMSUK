@@ -737,6 +737,41 @@
               "attributes": [],
               "isArrayNullable": true
             },
+            "locationDetail": {
+              "name": "locationDetail",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "personsInvolved": {
+              "name": "personsInvolved",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "witnesses": {
+              "name": "witnesses",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "injuredCount": {
+              "name": "injuredCount",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "reporterCallsign": {
+              "name": "reporterCallsign",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "locked": {
               "name": "locked",
               "isArray": false,
@@ -1512,6 +1547,12 @@
             },
             "urgent": {
               "name": "urgent",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false
+            },
+            "alarm": {
+              "name": "alarm",
               "isArray": false,
               "type": "Boolean",
               "isRequired": false
