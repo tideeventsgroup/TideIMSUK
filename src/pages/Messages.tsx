@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Radio, Send, Megaphone } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
+import { pushNotify } from '../utils/pushNotify';
 import type { Message, MessageChannelKey } from '../types/message';
 
 const CHANNELS: { key: MessageChannelKey; label: string }[] = [
@@ -70,6 +71,11 @@ export function Messages() {
         senderName: user.name,
         senderRole: user.role,
       });
+      void pushNotify(
+        `${CHANNELS.find((c) => c.key === channel)?.label ?? channel} message`,
+        `${user.name}: ${text.trim()}`,
+        '/messages',
+      );
       setText('');
     } finally {
       setSending(false);
