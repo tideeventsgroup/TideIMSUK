@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MapPin, AlertCircle, ShieldAlert, Camera, X, Loader2, RotateCcw } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { MapPin, AlertCircle, AlertTriangle, ShieldAlert, Camera, X, Loader2, RotateCcw } from 'lucide-react';
 import { uploadData } from 'aws-amplify/storage';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { useEvent } from '../context/EventContext';
+import { useIncidents } from '../hooks/useIncidents';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { lookupZone } from '../utils/zoneLookup';
 import { CATEGORIES, categoryLabel, type CategoryKey } from '../constants/taxonomy';
@@ -15,6 +16,10 @@ import type { Risk } from '../types/risk';
 import { enqueueIncident } from '../offline/queue';
 import { TriageSuggest, type AppliedFields } from '../components/TriageSuggest';
 import { pushNotify } from '../utils/pushNotify';
+
+// Same zone + same category + still open + logged recently — a soft signal,
+// never a block, that two stewards might be reporting the same thing.
+const DUPLICATE_WINDOW_MS = 45 * 60 * 1000;
 
 const LAST_INCIDENT_KEY = 'tide-ims-last-incident';
 
@@ -70,9 +75,27 @@ export function NewIncident() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gpsRequested = useRef(false);
   const zoneTouched = useRef(false);
+  const [duplicateWarningDismissed, setDuplicateWarningDismissed] = useState(false);
+
+  const { incidents: recentIncidents } = useIncidents(activeEvent?.id ?? null);
 
   const suggestedZone = position ? lookupZone(position.lng, position.lat) : null;
   const categoryDef = CATEGORIES.find((c) => c.key === category);
+
+  useEffect(() => {
+    setDuplicateWarningDismissed(false);
+  }, [zone, category]);
+
+  const potentialDuplicates =
+    narrative.trim().length > 10
+      ? recentIncidents.filter(
+          (i) =>
+            i.zone === zone &&
+            i.category === category &&
+            i.status !== 'Resolved' &&
+            Date.now() - new Date(i.timestamp).getTime() < DUPLICATE_WINDOW_MS,
+        )
+      : [];
 
   useEffect(() => {
     if (!activeEvent) return;
@@ -338,6 +361,48 @@ export function NewIncident() {
       </div>
 
       <TriageSuggest narrative={narrative} riskContext={risks.map((r) => ({ ref: r.ref, hazard: r.hazard }))} onApply={applyAiFields} />
+
+      {potentialDuplicates.length > 0 && !duplicateWarningDismissed && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-2)',
+            border: '1px solid var(--color-warning, #b45309)',
+            background: 'var(--color-warning-bg, #fffbeb)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 'var(--space-3)',
+            fontSize: 'var(--text-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+              <AlertTriangle size={14} />
+              Possible duplicate — someone may already be reporting this
+            </span>
+            <button
+              type="button"
+              onClick={() => setDuplicateWarningDismissed(true)}
+              aria-label="Dismiss duplicate warning"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', display: 'flex' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+          {potentialDuplicates.slice(0, 3).map((d) => {
+            const minsAgo = Math.round((Date.now() - new Date(d.timestamp).getTime()) / 60000);
+            return (
+              <Link key={d.id} to={`/incidents/${d.id}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
+                {d.loggedByName} logged {categoryLabel(d.category)} in {zoneLabel(d.zone)} {minsAgo <= 1 ? 'just now' : `${minsAgo}m ago`} — view incident
+              </Link>
+            );
+          })}
+          <span style={{ fontSize: 'var(--text-xs)', opacity: 0.8 }}>
+            This won't stop you logging — if it's genuinely separate, submit as normal.
+          </span>
+        </div>
+      )}
 
       <button type="submit" disabled={submitting || !narrative || photoUploading} style={{ minHeight: 52, fontSize: 'var(--text-base)' }}>
         {submitting ? 'Logging…' : 'Log incident'}
