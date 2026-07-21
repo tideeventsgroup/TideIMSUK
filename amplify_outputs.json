@@ -1970,6 +1970,32 @@
               "attributes": []
             }
           }
+        },
+        "PublicEventStatusReturnType": {
+          "name": "PublicEventStatusReturnType",
+          "fields": {
+            "eventName": {
+              "name": "eventName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
         }
       },
       "queries": {
@@ -2008,6 +2034,14 @@
               "isRequired": true
             }
           }
+        },
+        "publicEventStatus": {
+          "name": "publicEventStatus",
+          "isArray": false,
+          "type": {
+            "nonModel": "PublicEventStatusReturnType"
+          },
+          "isRequired": false
         }
       },
       "mutations": {
