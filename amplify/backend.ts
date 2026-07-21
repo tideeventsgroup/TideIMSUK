@@ -1,5 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { storage } from './storage/resource';
@@ -8,6 +9,7 @@ import { shiftSummary } from './functions/shift-summary/resource';
 import { checklistGenerator } from './functions/checklist-generator/resource';
 import { sendEscalationPush } from './functions/send-escalation-push/resource';
 import { publicEventStatus } from './functions/public-event-status/resource';
+import { manageUsers } from './functions/manage-users/resource';
 
 const backend = defineBackend({
   auth,
@@ -18,6 +20,7 @@ const backend = defineBackend({
   checklistGenerator,
   sendEscalationPush,
   publicEventStatus,
+  manageUsers,
 });
 
 /**
@@ -47,3 +50,22 @@ publicEventStatusLambda.addEnvironment('EVENT_TABLE', tables['Event'].tableName)
 publicEventStatusLambda.addEnvironment('INCIDENT_TABLE', tables['Incident'].tableName);
 tables['Event'].grantReadData(publicEventStatusLambda);
 tables['Incident'].grantReadData(publicEventStatusLambda);
+
+// manage-users (src/pages/ManageUsers.tsx) — Cognito admin API access, IAM-scoped
+// to this one user pool rather than table grants (it doesn't touch app data).
+const manageUsersLambda = backend.manageUsers.resources.lambda as LambdaFunction;
+manageUsersLambda.addEnvironment('USER_POOL_ID', backend.auth.resources.userPool.userPoolId);
+manageUsersLambda.addToRolePolicy(
+  new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      'cognito-idp:ListUsers',
+      'cognito-idp:AdminListGroupsForUser',
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminAddUserToGroup',
+      'cognito-idp:AdminRemoveUserFromGroup',
+      'cognito-idp:AdminDeleteUser',
+    ],
+    resources: [backend.auth.resources.userPool.userPoolArn],
+  }),
+);

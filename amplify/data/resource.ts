@@ -3,6 +3,7 @@ import { triageAssist } from '../functions/triage-assist/resource';
 import { shiftSummary } from '../functions/shift-summary/resource';
 import { sendEscalationPush } from '../functions/send-escalation-push/resource';
 import { publicEventStatus } from '../functions/public-event-status/resource';
+import { manageUsers } from '../functions/manage-users/resource';
 
 /**
  * Data model per Build Plan Section 3.
@@ -456,6 +457,44 @@ const schema = a.schema({
     )
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(publicEventStatus)),
+
+  // Event Control only — Cognito user pool admin, not app data (manage-users
+  // Lambda talks to cognito-idp directly; see backend.ts for the IAM grant).
+  AppUser: a.customType({
+    sub: a.string().required(),
+    email: a.string().required(),
+    name: a.string(),
+    role: a.string(),
+    enabled: a.boolean().required(),
+    status: a.string().required(),
+  }),
+
+  listAppUsers: a
+    .query()
+    .returns(a.ref('AppUser').array())
+    .authorization((allow) => [allow.groups(['event-control'])])
+    .handler(a.handler.function(manageUsers)),
+
+  createAppUser: a
+    .mutation()
+    .arguments({ email: a.string().required(), name: a.string().required(), role: a.string().required() })
+    .returns(a.ref('AppUser'))
+    .authorization((allow) => [allow.groups(['event-control'])])
+    .handler(a.handler.function(manageUsers)),
+
+  updateAppUserRole: a
+    .mutation()
+    .arguments({ sub: a.string().required(), role: a.string().required() })
+    .returns(a.ref('AppUser'))
+    .authorization((allow) => [allow.groups(['event-control'])])
+    .handler(a.handler.function(manageUsers)),
+
+  deleteAppUser: a
+    .mutation()
+    .arguments({ sub: a.string().required() })
+    .returns(a.boolean())
+    .authorization((allow) => [allow.groups(['event-control'])])
+    .handler(a.handler.function(manageUsers)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3 } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3, UserCog } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
@@ -18,6 +18,7 @@ import { NewIncident } from './pages/NewIncident';
 import { IncidentDetail } from './pages/IncidentDetail';
 import { Reports } from './pages/Reports';
 import { EventSetup } from './pages/EventSetup';
+import { ManageUsers } from './pages/ManageUsers';
 import { RiskRegister } from './pages/RiskRegister';
 import { Checklists } from './pages/Checklists';
 import { ChecklistDetail } from './pages/ChecklistDetail';
@@ -135,6 +136,7 @@ export default function App() {
             <NavLink to="/analytics" label="Analytics" icon={BarChart3} />
           </RoleGate>
           <RoleGate allow={['event-control']}>
+            <NavLink to="/users" label="Users" icon={UserCog} />
             <NavLink to="/setup" label="Setup" icon={Settings} />
           </RoleGate>
         </nav>
@@ -146,6 +148,7 @@ export default function App() {
         <Route path="/incidents/:id" element={<IncidentDetail />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/setup" element={<EventSetup />} />
+        <Route path="/users" element={<ManageUsers />} />
         <Route path="/risk-register" element={<RiskRegister />} />
         <Route path="/checklists" element={<Checklists />} />
         <Route path="/checklists/:id" element={<ChecklistDetail />} />
