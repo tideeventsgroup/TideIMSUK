@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Lock, MapPin, Radio as RadioIcon, FileText, ListChecks } from 'lucide-react';
+import { Lock, MapPin, Radio as RadioIcon, FileText, ListChecks, ClipboardCheck } from 'lucide-react';
 import { client } from '../data/client';
 import { useAuth } from '../context/AuthContext';
 import { categoryLabel } from '../constants/taxonomy';
@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { exportIncidentToPdf } from '../utils/pdf';
 import { pushNotify } from '../utils/pushNotify';
 import type { Incident, IncidentStatus } from '../types/incident';
+import type { IncidentDebrief } from '../types/groundOps';
 
 export function IncidentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,13 @@ export function IncidentDetail() {
   const [jobAssignee, setJobAssignee] = useState('');
   const [jobDueAt, setJobDueAt] = useState('');
   const [jobBusy, setJobBusy] = useState(false);
+  const [debrief, setDebrief] = useState<IncidentDebrief | null>(null);
+  const [debriefLoaded, setDebriefLoaded] = useState(false);
+  const [showDebriefForm, setShowDebriefForm] = useState(false);
+  const [whatHappened, setWhatHappened] = useState('');
+  const [whatWorkedWell, setWhatWorkedWell] = useState('');
+  const [whatToChange, setWhatToChange] = useState('');
+  const [debriefBusy, setDebriefBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -45,6 +53,42 @@ export function IncidentDetail() {
       sub.unsubscribe();
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    client.models.IncidentDebrief.list({ filter: { incidentId: { eq: id } } }).then(({ data }) => {
+      if (!cancelled) {
+        setDebrief((data[0] as unknown as IncidentDebrief) ?? null);
+        setDebriefLoaded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const submitDebrief = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!incident || !user || !whatHappened.trim()) return;
+    setDebriefBusy(true);
+    try {
+      const { data: created } = await client.models.IncidentDebrief.create({
+        incidentId: incident.id,
+        eventId: incident.eventId,
+        whatHappened: whatHappened.trim(),
+        whatWorkedWell: whatWorkedWell.trim() || undefined,
+        whatToChange: whatToChange.trim() || undefined,
+        authoredByUserId: user.userId,
+        authoredByName: user.name,
+        timestamp: new Date().toISOString(),
+      });
+      setDebrief((created as unknown as IncidentDebrief) ?? null);
+      setShowDebriefForm(false);
+    } finally {
+      setDebriefBusy(false);
+    }
+  };
 
   if (!incident || !user) return <p style={{ padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>Loading…</p>;
 
@@ -388,6 +432,88 @@ export function IncidentDetail() {
           </button>
         </div>
       )}
+
+      {isCommand &&
+        incident.status === 'Resolved' &&
+        (incident.escalationLevel === 'Level3' || incident.escalationLevel === 'Level4') &&
+        debriefLoaded && (
+          <>
+            <h2 style={{ fontSize: 'var(--text-base)', marginTop: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ClipboardCheck size={16} /> Post-incident debrief
+            </h2>
+            {debrief ? (
+              <div
+                style={{
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 'var(--space-4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-3)',
+                  fontSize: 'var(--text-sm)',
+                }}
+              >
+                <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--text-xs)', margin: 0 }}>
+                  Authored by {debrief.authoredByName} at {new Date(debrief.timestamp).toLocaleString('en-GB')}
+                </p>
+                <div>
+                  <strong>What happened</strong>
+                  <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{debrief.whatHappened}</p>
+                </div>
+                {debrief.whatWorkedWell && (
+                  <div>
+                    <strong>What worked well</strong>
+                    <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{debrief.whatWorkedWell}</p>
+                  </div>
+                )}
+                {debrief.whatToChange && (
+                  <div>
+                    <strong>What to change</strong>
+                    <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{debrief.whatToChange}</p>
+                  </div>
+                )}
+              </div>
+            ) : showDebriefForm ? (
+              <form
+                onSubmit={submitDebrief}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-3)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 'var(--space-4)',
+                }}
+              >
+                <label>
+                  What happened
+                  <textarea rows={3} required value={whatHappened} onChange={(e) => setWhatHappened(e.target.value)} />
+                </label>
+                <label>
+                  What worked well
+                  <textarea rows={2} value={whatWorkedWell} onChange={(e) => setWhatWorkedWell(e.target.value)} />
+                </label>
+                <label>
+                  What to change next time
+                  <textarea rows={2} value={whatToChange} onChange={(e) => setWhatToChange(e.target.value)} />
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                  <button type="submit" disabled={debriefBusy || !whatHappened.trim()}>
+                    {debriefBusy ? 'Saving…' : 'Save debrief'}
+                  </button>
+                  <button type="button" className="secondary" onClick={() => setShowDebriefForm(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button type="button" className="secondary" onClick={() => setShowDebriefForm(true)}>
+                <ClipboardCheck size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+                Add debrief
+              </button>
+            )}
+          </>
+        )}
 
       <ConfirmDialog
         open={pendingLevel !== null}

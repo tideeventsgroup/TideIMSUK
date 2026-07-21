@@ -422,6 +422,23 @@ const schema = a.schema({
       timestamp: a.datetime().required(),
     })
     .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
+
+  // Post-incident debrief / RCA (ICS/NIMS-style accountability record), one
+  // per resolved Level 3/4 incident — see IncidentDetail.tsx. Append-only:
+  // once authored, a debrief is never edited, matching the other ground-ops
+  // audit logs above.
+  IncidentDebrief: a
+    .model({
+      incidentId: a.id().required(),
+      eventId: a.id().required(),
+      whatHappened: a.string().required(),
+      whatWorkedWell: a.string(),
+      whatToChange: a.string(),
+      authoredByUserId: a.string().required(),
+      authoredByName: a.string().required(),
+      timestamp: a.datetime().required(),
+    })
+    .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

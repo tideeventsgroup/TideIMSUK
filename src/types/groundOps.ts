@@ -30,3 +30,15 @@ export interface ShiftHandoverNote {
   authoredByName: string;
   timestamp: string;
 }
+
+export interface IncidentDebrief {
+  id: string;
+  incidentId: string;
+  eventId: string;
+  whatHappened: string;
+  whatWorkedWell?: string | null;
+  whatToChange?: string | null;
+  authoredByUserId: string;
+  authoredByName: string;
+  timestamp: string;
+}

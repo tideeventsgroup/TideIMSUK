@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
@@ -23,6 +23,7 @@ import { Checklists } from './pages/Checklists';
 import { ChecklistDetail } from './pages/ChecklistDetail';
 import { Messages } from './pages/Messages';
 import { FMICGround } from './pages/FMICGround';
+import { Analytics } from './pages/Analytics';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -131,6 +132,7 @@ export default function App() {
           <RoleGate allow={['event-control', 'fmic']}>
             <NavLink to="/reports" label="Reports" icon={FileBarChart2} />
             <NavLink to="/messages" label="Messages" icon={MessageSquare} />
+            <NavLink to="/analytics" label="Analytics" icon={BarChart3} />
           </RoleGate>
           <RoleGate allow={['event-control']}>
             <NavLink to="/setup" label="Setup" icon={Settings} />
@@ -149,6 +151,7 @@ export default function App() {
         <Route path="/checklists/:id" element={<ChecklistDetail />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/ground" element={<FMICGround />} />
+        <Route path="/analytics" element={<Analytics />} />
       </Routes>
     </div>
   );
