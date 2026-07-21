@@ -31,6 +31,17 @@ export interface ShiftHandoverNote {
   timestamp: string;
 }
 
+export interface ShiftRosterEntry {
+  id: string;
+  eventId: string;
+  personName: string;
+  position: string;
+  zone?: string | null;
+  shiftStart: string;
+  shiftEnd: string;
+  notes?: string | null;
+}
+
 export interface IncidentDebrief {
   id: string;
   incidentId: string;

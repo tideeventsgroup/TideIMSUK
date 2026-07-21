@@ -425,6 +425,26 @@ const schema = a.schema({
     })
     .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
 
+  // Planned staffing (Section 5.1-style shift roster) — distinct from
+  // UserProfile.status (live on-post/break/off-duty self-report):
+  // this is the plan, that's the reality. Full CRUD, not append-only,
+  // since a roster gets edited as shifts change. personName is freeform
+  // rather than a cognitoSub link — temp/agency stewards on the roster
+  // often don't have an app login.
+  ShiftRosterEntry: a
+    .model({
+      eventId: a.id().required(),
+      personName: a.string().required(),
+      position: a.string().required(),
+      zone: a.string(),
+      shiftStart: a.datetime().required(),
+      shiftEnd: a.datetime().required(),
+      notes: a.string(),
+    })
+    .authorization((allow) => [
+      allow.groups(['event-control', 'fmic']).to(['create', 'read', 'update', 'delete']),
+    ]),
+
   // Post-incident debrief / RCA (ICS/NIMS-style accountability record), one
   // per resolved Level 3/4 incident — see IncidentDetail.tsx. Append-only:
   // once authored, a debrief is never edited, matching the other ground-ops

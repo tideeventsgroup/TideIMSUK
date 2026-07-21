@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3, UserCog, MonitorPlay } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3, UserCog, MonitorPlay, CalendarClock } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
@@ -26,6 +26,7 @@ import { Messages } from './pages/Messages';
 import { FMICGround } from './pages/FMICGround';
 import { Analytics } from './pages/Analytics';
 import { TvBoard } from './pages/TvBoard';
+import { ShiftRoster } from './pages/ShiftRoster';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -130,6 +131,7 @@ export default function App() {
           </RoleGate>
           <RoleGate allow={['event-control', 'fmic']}>
             <NavLink to="/ground" label="Ground ops" icon={Users} />
+            <NavLink to="/roster" label="Roster" icon={CalendarClock} />
             <NavLink to="/checklists" label="Checklists" icon={ListChecks} />
           </RoleGate>
           <RoleGate allow={['event-control']}>
@@ -162,6 +164,7 @@ export default function App() {
         <Route path="/ground" element={<FMICGround />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/tv" element={<TvBoard />} />
+        <Route path="/roster" element={<ShiftRoster />} />
       </Routes>
     </div>
   );
