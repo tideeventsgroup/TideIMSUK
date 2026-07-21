@@ -252,6 +252,34 @@ a {
   }
 }
 
+@keyframes tv-pulse-border {
+  0%, 100% {
+    border-color: var(--sev-4);
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.35);
+  }
+  50% {
+    border-color: var(--sev-4-solid);
+    box-shadow: 0 0 0 8px rgba(248, 113, 113, 0);
+  }
+}
+
+.tv-critical {
+  animation: tv-pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes tv-live-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.tv-live-dot {
+  animation: tv-live-dot 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
