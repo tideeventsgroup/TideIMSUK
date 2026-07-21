@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3, UserCog } from 'lucide-react';
+import { LogOut, Radio as RadioIcon, ClipboardList, FileBarChart2, Settings, ShieldAlert, ListChecks, MessageSquare, Users, BarChart3, UserCog, MonitorPlay } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { roleLabel } from './constants/escalation';
 import { OfflineQueueBadge } from './components/OfflineQueueBadge';
@@ -25,6 +25,7 @@ import { ChecklistDetail } from './pages/ChecklistDetail';
 import { Messages } from './pages/Messages';
 import { FMICGround } from './pages/FMICGround';
 import { Analytics } from './pages/Analytics';
+import { TvBoard } from './pages/TvBoard';
 
 function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof ClipboardList }) {
   const location = useLocation();
@@ -59,11 +60,14 @@ function NavLink({ to, label, icon: Icon }: { to: string; label: string; icon: t
 export default function App() {
   const { signOut } = useAuthenticator((ctx) => [ctx.user]);
   const { user } = useAuth();
+  const location = useLocation();
+  const isTv = location.pathname === '/tv';
 
   return (
     <div style={{ minHeight: '100vh' }}>
       <OfflineQueueBadge />
       <AlarmListener />
+      {!isTv && (
       <header
         style={{
           borderBottom: '1px solid var(--color-border)',
@@ -122,6 +126,7 @@ export default function App() {
           </RoleGate>
           <RoleGate allow={['event-control', 'fmic', 'view-only']}>
             <NavLink to="/" label="Live board" icon={RadioIcon} />
+            <NavLink to="/tv" label="TV mode" icon={MonitorPlay} />
           </RoleGate>
           <RoleGate allow={['event-control', 'fmic']}>
             <NavLink to="/ground" label="Ground ops" icon={Users} />
@@ -141,6 +146,7 @@ export default function App() {
           </RoleGate>
         </nav>
       </header>
+      )}
 
       <Routes>
         <Route path="/" element={user?.role === 'staff' ? <StaffHome /> : <LiveBoard />} />
@@ -155,6 +161,7 @@ export default function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/ground" element={<FMICGround />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/tv" element={<TvBoard />} />
       </Routes>
     </div>
   );

@@ -9,6 +9,7 @@ import { useIncidents } from '../hooks/useIncidents';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { lookupZone } from '../utils/zoneLookup';
 import { CATEGORIES, categoryLabel, type CategoryKey } from '../constants/taxonomy';
+import { QUICK_LOG_PRESETS, type QuickLogPreset } from '../constants/quickLogPresets';
 import { ZonePicker } from '../components/ZonePicker';
 import { zoneLabel, type ZoneKey } from '../constants/zones';
 import type { Priority } from '../types/incident';
@@ -73,6 +74,7 @@ export function NewIncident() {
   const [injuredCount, setInjuredCount] = useState<number | null>(null);
   const [reporterCallsign, setReporterCallsign] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const narrativeRef = useRef<HTMLTextAreaElement>(null);
   const gpsRequested = useRef(false);
   const zoneTouched = useRef(false);
   const [duplicateWarningDismissed, setDuplicateWarningDismissed] = useState(false);
@@ -148,6 +150,17 @@ export function NewIncident() {
     handleCategoryChange(lastIncident.category);
     zoneTouched.current = true;
     setZone(lastIncident.zone);
+  };
+
+  const applyPreset = (preset: QuickLogPreset) => {
+    handleCategoryChange(preset.category);
+    setNarrative(preset.narrative);
+    onNarrativeFocus();
+    requestAnimationFrame(() => {
+      narrativeRef.current?.focus();
+      const len = preset.narrative.length;
+      narrativeRef.current?.setSelectionRange(len, len);
+    });
   };
 
   const applyAiFields = (fields: AppliedFields) => {
@@ -324,11 +337,26 @@ export function NewIncident() {
         </button>
       )}
 
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+        {QUICK_LOG_PRESETS.map((preset) => (
+          <button
+            key={preset.key}
+            type="button"
+            className="secondary"
+            onClick={() => applyPreset(preset)}
+            style={{ minHeight: 32, padding: '0 var(--space-3)', fontSize: 'var(--text-xs)' }}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
       {/* Capture first, structure second — one field to get the report down,
           everything else is a fast-follow the Loggist can ignore under pressure. */}
       <label>
         Narrative
         <textarea
+          ref={narrativeRef}
           autoFocus
           required
           rows={5}
