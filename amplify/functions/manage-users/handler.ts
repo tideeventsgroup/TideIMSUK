@@ -18,7 +18,8 @@ const USER_POOL_ID = process.env.USER_POOL_ID!;
 const ROLE_GROUPS = ['event-control', 'fmic', 'staff', 'view-only'];
 
 interface AppSyncEvent {
-  info: { fieldName: string };
+  fieldName?: string;
+  info?: { fieldName?: string };
   arguments: Record<string, string>;
   identity?: { sub?: string };
 }
@@ -109,7 +110,8 @@ async function deleteAppUser(args: { sub: string }, callerSub?: string) {
 }
 
 export const handler = async (event: AppSyncEvent) => {
-  switch (event.info.fieldName) {
+  const fieldName = event.fieldName ?? event.info?.fieldName;
+  switch (fieldName) {
     case 'listAppUsers':
       return listAppUsers();
     case 'createAppUser':
@@ -119,6 +121,6 @@ export const handler = async (event: AppSyncEvent) => {
     case 'deleteAppUser':
       return deleteAppUser(event.arguments as { sub: string }, event.identity?.sub);
     default:
-      throw new Error(`Unknown field: ${event.info.fieldName}`);
+      throw new Error(`Unknown field: ${fieldName}. Raw event: ${JSON.stringify(event)}`);
   }
 };
