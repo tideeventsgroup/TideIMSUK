@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { triageAssist } from '../functions/triage-assist/resource';
 import { shiftSummary } from '../functions/shift-summary/resource';
 import { sendEscalationPush } from '../functions/send-escalation-push/resource';
+import { publicEventStatus } from '../functions/public-event-status/resource';
 
 /**
  * Data model per Build Plan Section 3.
@@ -439,6 +440,22 @@ const schema = a.schema({
       timestamp: a.datetime().required(),
     })
     .authorization((allow) => [allow.groups(['event-control', 'fmic']).to(['create', 'read'])]),
+
+  // Unauthenticated public status page (src/pages/PublicStatus.tsx) —
+  // deliberately returns only a coarse status, never raw incident data.
+  // Server-side "current event" pick: live now, else nearest upcoming,
+  // else most recent past (see handler for the exact rule).
+  publicEventStatus: a
+    .query()
+    .returns(
+      a.customType({
+        eventName: a.string(),
+        status: a.string(),
+        message: a.string(),
+      }),
+    )
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(publicEventStatus)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

@@ -19,6 +19,11 @@ export function AuthFooter() {
     >
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <AuthDisclaimer />
+        <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)', textAlign: 'center' }}>
+          <a href="/status" style={{ color: 'var(--color-text-tertiary)' }}>
+            Public event status
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { triageAssist } from './functions/triage-assist/resource';
 import { shiftSummary } from './functions/shift-summary/resource';
 import { checklistGenerator } from './functions/checklist-generator/resource';
 import { sendEscalationPush } from './functions/send-escalation-push/resource';
+import { publicEventStatus } from './functions/public-event-status/resource';
 
 const backend = defineBackend({
   auth,
@@ -16,6 +17,7 @@ const backend = defineBackend({
   shiftSummary,
   checklistGenerator,
   sendEscalationPush,
+  publicEventStatus,
 });
 
 /**
@@ -39,3 +41,9 @@ tables['Event'].grantReadData(checklistGeneratorLambda);
 const sendEscalationPushLambda = backend.sendEscalationPush.resources.lambda as LambdaFunction;
 sendEscalationPushLambda.addEnvironment('PUSH_SUBSCRIPTION_TABLE', tables['PushSubscription'].tableName);
 tables['PushSubscription'].grantReadWriteData(sendEscalationPushLambda);
+
+const publicEventStatusLambda = backend.publicEventStatus.resources.lambda as LambdaFunction;
+publicEventStatusLambda.addEnvironment('EVENT_TABLE', tables['Event'].tableName);
+publicEventStatusLambda.addEnvironment('INCIDENT_TABLE', tables['Incident'].tableName);
+tables['Event'].grantReadData(publicEventStatusLambda);
+tables['Incident'].grantReadData(publicEventStatusLambda);
